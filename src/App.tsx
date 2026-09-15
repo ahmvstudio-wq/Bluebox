@@ -32,12 +32,12 @@ export const App: React.FC = () => {
           <div className="flex items-center gap-2.5 sm:gap-3">
             <img
               src="/logo.jpg"
-              alt="Bluebox Barber"
+              alt="Blackbox Barber"
               className="w-8 h-8 rounded-full border border-[#D4AF37] object-cover"
             />
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-xs sm:text-sm tracking-wide text-[var(--text-main)]">Bluebox</span>
+                <span className="font-extrabold text-xs sm:text-sm tracking-wide text-[var(--text-main)]">Blackbox</span>
                 <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">BARBER</span>
               </div>
               <span className="text-[10px] text-[var(--text-muted)] block sm:inline">Chair POS • {currentUser.name}</span>
@@ -72,7 +72,7 @@ export const App: React.FC = () => {
 
         <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)] py-3 px-4 sm:px-6 text-center text-xs text-[var(--text-dim)] shrink-0">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1">
-            <span className="text-[11px]">Bluebox Barber • Personal Chair Management</span>
+            <span className="text-[11px]">Blackbox Barber • Personal Chair Management</span>
             <span className="text-[11px] text-emerald-500 dark:text-emerald-400 font-semibold">Strict Data Isolation Active</span>
           </div>
         </footer>
@@ -118,7 +118,7 @@ export const App: React.FC = () => {
         <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)] py-3.5 px-4 sm:px-6 text-center text-xs text-[var(--text-dim)] shrink-0 hidden sm:block">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-[var(--text-main)] font-['Cinzel',serif]">BLUEBOX BARBER</span>
+              <span className="font-extrabold text-[var(--text-main)] font-['Cinzel',serif]">BLACKBOX BARBER</span>
               <span>• Full Management & Operations Suite</span>
             </div>
             <p className="text-[11px] text-[var(--text-dim)]">

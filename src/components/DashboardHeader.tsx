@@ -75,11 +75,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <div className="flex items-center gap-1.5 min-w-0">
               <img
                 src="/logo.jpg"
-                alt="Bluebox Barber"
+                alt="Blackbox Barber"
                 className="w-6 h-6 rounded-full border border-[#D4AF37] object-cover shrink-0"
               />
               <span className="font-black text-xs tracking-wider text-[var(--text-main)] font-['Cinzel',serif] truncate">
-                BLUEBOX
+                BLACKBOX
               </span>
             </div>
           </div>

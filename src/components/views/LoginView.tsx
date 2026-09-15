@@ -51,12 +51,12 @@ export const LoginView: React.FC = () => {
           <div className="inline-flex items-center gap-3 px-4 py-2 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-subtle)] shadow-md">
             <img
               src="/logo.jpg"
-              alt="Bluebox Barber"
-              className="w-10 h-10 rounded-full border border-[#D4AF37] object-cover"
+              alt="Blackbox Barber"
+              className="w-10 h-10 rounded-full border border-[#D4AF37] object-cover shadow-sm"
             />
             <div className="text-left">
               <div className="flex items-center gap-1.5">
-                <span className="font-black text-base tracking-wide text-[var(--text-main)]">BLUEBOX</span>
+                <span className="font-black text-base tracking-wide text-[var(--text-main)]">BLACKBOX</span>
                 <span className="text-[10px] font-black px-1.5 py-0.2 rounded bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">BARBER</span>
               </div>
               <span className="text-[11px] text-[var(--text-muted)] font-medium">Operations & Management System</span>

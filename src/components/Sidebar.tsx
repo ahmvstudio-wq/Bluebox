@@ -138,13 +138,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="flex items-center gap-3">
             <img
               src="/logo.jpg"
-              alt="Bluebox Barber"
+              alt="Blackbox Barber"
               className="w-10 h-10 rounded-full border border-[#D4AF37] object-cover shadow-sm"
             />
             <div>
               <div className="flex items-center gap-1.5">
                 <h1 className="font-black text-base tracking-wide text-[var(--text-main)] font-['Inter',sans-serif]">
-                  Bluebox
+                  Blackbox
                 </h1>
                 <span className="text-[10px] font-black px-1.5 py-0.2 rounded bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40 tracking-wider">
                   BARBER
@@ -423,12 +423,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <div className="flex items-center gap-3">
                 <img
                   src="/logo.jpg"
-                  alt="Bluebox Barber"
+                  alt="Blackbox Barber"
                   className="w-9 h-9 rounded-full border border-[#D4AF37] object-cover"
                 />
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-extrabold text-sm tracking-wide text-[var(--text-main)]">Bluebox</span>
+                    <span className="font-extrabold text-sm tracking-wide text-[var(--text-main)]">Blackbox</span>
                     <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">
                       BARBER
                     </span>
