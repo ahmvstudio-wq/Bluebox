@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useCash } from '../../context/CashContext';
 import { 
   Scissors, 
@@ -11,32 +11,47 @@ import {
   ShieldCheck, 
   CheckCircle2,
   Lock,
-  UserCheck
+  UserCheck,
+  TrendingUp,
+  Award,
+  DollarSign,
+  Users
 } from 'lucide-react';
 
 export const BarbersView: React.FC = () => {
   const { 
     barberPerformanceList, 
-    addWithdrawal, 
     branchBookings, 
     branchWithdrawals, 
     loginAsBarber,
-    branches
+    branches,
+    currentBranch
   } = useCash();
 
   const [expandedBarberId, setExpandedBarberId] = useState<string | null>(null);
-  const [withdrawModalBarberId, setWithdrawModalBarberId] = useState<string | null>(null);
-  const [withdrawAmount, setWithdrawAmount] = useState<string>('50');
-  const [withdrawReason, setWithdrawReason] = useState<string>('Mid-month cash advance');
 
-  const activeModalBarber = barberPerformanceList.find((b) => b.barber.id === withdrawModalBarberId);
+  // Top Performance Benchmark Metrics
+  const activeBranchData = branches.find((b) => b.id === currentBranch) || branches[0];
 
-  const handleDisburse = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!withdrawModalBarberId || !parseFloat(withdrawAmount)) return;
-    addWithdrawal(withdrawModalBarberId, parseFloat(withdrawAmount), withdrawReason);
-    setWithdrawModalBarberId(null);
-  };
+  const topRevenueBarber = useMemo(() => {
+    if (!barberPerformanceList.length) return null;
+    return [...barberPerformanceList].sort((a, b) => b.revenueGenerated - a.revenueGenerated)[0];
+  }, [barberPerformanceList]);
+
+  const topCutsBarber = useMemo(() => {
+    if (!barberPerformanceList.length) return null;
+    return [...barberPerformanceList].sort((a, b) => b.servicesCompleted - a.servicesCompleted)[0];
+  }, [barberPerformanceList]);
+
+  const totalBranchRevenue = useMemo(() => {
+    return barberPerformanceList.reduce((sum, b) => sum + b.revenueGenerated, 0);
+  }, [barberPerformanceList]);
+
+  const totalBranchCuts = useMemo(() => {
+    return barberPerformanceList.reduce((sum, b) => sum + b.servicesCompleted, 0);
+  }, [barberPerformanceList]);
+
+  const avgTicket = totalBranchCuts > 0 ? totalBranchRevenue / totalBranchCuts : 0;
 
   return (
     <div className="space-y-6">
@@ -46,16 +61,91 @@ export const BarbersView: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
             <Scissors className="w-5 h-5 text-[#D4AF37]" />
-            Barber Performance & Worker Dossiers
+            Barber Performance & Staff Dossiers
           </h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Click any barber card to expand their dedicated profile, live service ledger, and cash advance history.
+            Operational leaderboards, individual chair output, and live station ledgers for {activeBranchData.name}.
           </p>
         </div>
       </div>
 
-      {/* Grid of Barber Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+      {/* 1. Top Performance Leaderboard Banner (As Requested in Meeting) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+        
+        {/* Top Earner */}
+        <div className="card-executive p-3.5 sm:p-4 border-[#D4AF37]/40">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              Top Earner
+            </span>
+            <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-1.5 py-0.5 flex items-center gap-1">
+              <Award className="w-3 h-3 text-[#D4AF37]" /> Leader
+            </span>
+          </div>
+          <div className="mt-2">
+            <span className="text-base sm:text-lg font-extrabold text-[var(--text-main)] block truncate">
+              {topRevenueBarber?.barber.name || 'Barber #1'}
+            </span>
+            <span className="text-xs font-mono font-bold text-[#D4AF37]">
+              ₾{topRevenueBarber?.revenueGenerated.toFixed(2) || '0.00'} GEL
+            </span>
+          </div>
+        </div>
+
+        {/* Most Cuts */}
+        <div className="card-executive p-3.5 sm:p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              Most Cuts Served
+            </span>
+            <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-1.5 py-0.5">Efficiency</span>
+          </div>
+          <div className="mt-2">
+            <span className="text-base sm:text-lg font-extrabold text-[var(--text-main)] block truncate">
+              {topCutsBarber?.barber.name || 'Barber #1'}
+            </span>
+            <span className="text-xs font-mono font-bold text-emerald-500">
+              {topCutsBarber?.servicesCompleted || 0} clients served
+            </span>
+          </div>
+        </div>
+
+        {/* Average Ticket */}
+        <div className="card-executive p-3.5 sm:p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              Branch Avg Ticket
+            </span>
+            <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-1.5 py-0.5">Benchmark</span>
+          </div>
+          <div className="mt-2">
+            <span className="text-xl sm:text-2xl font-black text-[var(--text-main)] font-mono">
+              ₾{avgTicket.toFixed(1)}
+            </span>
+            <span className="text-[10px] text-[var(--text-dim)] block">per client visit</span>
+          </div>
+        </div>
+
+        {/* Active Chairs */}
+        <div className="card-executive p-3.5 sm:p-4">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+              Active Stations
+            </span>
+            <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-1.5 py-0.5">Staff</span>
+          </div>
+          <div className="mt-2">
+            <span className="text-xl sm:text-2xl font-black text-[#D4AF37] font-mono">
+              {barberPerformanceList.length} Chairs
+            </span>
+            <span className="text-[10px] text-[var(--text-dim)] block">{activeBranchData.shortName} roster</span>
+          </div>
+        </div>
+
+      </div>
+
+      {/* 2. Grid of Barber Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {barberPerformanceList.map((stat) => {
           const isExpanded = expandedBarberId === stat.barber.id;
           const barberBranch = branches.find((b) => b.id === stat.barber.branchId);
@@ -66,20 +156,20 @@ export const BarbersView: React.FC = () => {
             return (
               <div
                 key={stat.barber.id}
-                className="col-span-full card-executive p-6 space-y-6 border-[#D4AF37] shadow-xl ring-1 ring-[#D4AF37]/30 animate-scale-in bg-[var(--bg-card)]"
+                className="col-span-full card-executive p-4 sm:p-6 space-y-5 border-[#D4AF37] shadow-xl ring-1 ring-[#D4AF37]/30 animate-scale-in bg-[var(--bg-card)]"
               >
                 {/* 1. Expanded Header Banner */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-[var(--border-subtle)]">
-                  <div className="flex items-center gap-4">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-4 border-b border-[var(--border-subtle)]">
+                  <div className="flex items-center gap-3.5">
                     <img
                       src={stat.barber.avatar}
                       alt={stat.barber.name}
-                      className="w-16 h-16 rounded-2xl object-cover border-2 border-[#D4AF37] shadow-md shrink-0"
+                      className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-[#D4AF37] shadow-md shrink-0"
                     />
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-xl font-black text-[var(--text-main)]">{stat.barber.name}</h3>
-                        <span className="badge-status badge-gold">50% Commission Cut</span>
+                        <h3 className="text-lg sm:text-xl font-black text-[var(--text-main)]">{stat.barber.name}</h3>
+                        <span className="badge-status badge-gold">50% Commission</span>
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-muted)]">
                           {stat.barber.workingHours}h Shift
                         </span>
@@ -88,8 +178,8 @@ export const BarbersView: React.FC = () => {
                           PIN: {stat.barber.pin || '1234'}
                         </span>
                       </div>
-                      <p className="text-xs text-[var(--text-muted)] mt-1">
-                        {stat.barber.specialty} • Branch: <strong className="text-[var(--text-main)]">{barberBranch?.name || stat.barber.branchId}</strong> ({barberBranch?.address})
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                        {stat.barber.specialty} • Branch: <strong className="text-[var(--text-main)]">{barberBranch?.name || stat.barber.branchId}</strong>
                       </p>
                     </div>
                   </div>
@@ -97,262 +187,137 @@ export const BarbersView: React.FC = () => {
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => loginAsBarber(stat.barber.id)}
-                      className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5"
-                      title="Switch to this barber's restricted view"
+                      className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
                     >
                       <UserCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span>Switch to Barber View</span>
-                    </button>
-
-                    <button
-                      onClick={() => setWithdrawModalBarberId(stat.barber.id)}
-                      className="btn-primary-gold text-xs py-2 px-3 flex items-center gap-1.5"
-                    >
-                      <ArrowDownRight className="w-3.5 h-3.5" />
-                      <span>Give Cash Advance</span>
+                      <span>Switch to Chair View</span>
                     </button>
 
                     <button
                       onClick={() => setExpandedBarberId(null)}
-                      className="p-2 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-card-hover)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-subtle)] text-xs font-bold transition-all flex items-center gap-1"
-                      title="Collapse details"
+                      className="p-1.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
                     >
-                      <ChevronUp className="w-4 h-4 text-[#D4AF37]" />
-                      <span>Collapse</span>
+                      <ChevronUp className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
 
-                {/* 2. Expanded 4-Card Financial Metrics */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-1">
-                    <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] block">Today's Revenue</span>
-                    <div className="text-xl font-black font-mono text-[var(--text-main)]">
-                      ₾{stat.revenueGenerated.toFixed(2)}
-                    </div>
-                    <span className="text-[11px] text-emerald-500 font-semibold block">
-                      Barber 50%: ₾{stat.barberEarnings.toFixed(2)}
-                    </span>
+                {/* 2. Key Metrics Row */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                  <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Today's Revenue</span>
+                    <span className="text-lg font-black text-[var(--text-main)] font-mono">₾{stat.revenueGenerated.toFixed(2)}</span>
+                    <span className="text-[9px] text-[var(--text-dim)] block">Gross Generated</span>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-1">
-                    <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] block">Month Accumulated</span>
-                    <div className="text-xl font-black font-mono text-[var(--text-main)]">
-                      ₾{(stat.barber.monthBaseEarnings + stat.barberEarnings).toFixed(2)}
-                    </div>
-                    <span className="text-[11px] text-[var(--text-muted)] block">
-                      Base: ₾{stat.barber.monthBaseEarnings} GEL
-                    </span>
+                  <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Clients Served</span>
+                    <span className="text-lg font-black text-emerald-500 font-mono">{stat.clientsServedToday}</span>
+                    <span className="text-[9px] text-[var(--text-dim)] block">{stat.servicesCompleted} cuts</span>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-1">
-                    <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] block">Cash Advances Paid</span>
-                    <div className="text-xl font-black font-mono text-rose-500">
-                      -₾{stat.totalWithdrawn.toFixed(2)}
-                    </div>
-                    <span className="text-[11px] text-[var(--text-muted)] block">
-                      {barberWithdrawalsList.length} withdrawals
-                    </span>
+                  <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">50% Barber Payout</span>
+                    <span className="text-lg font-black text-[#D4AF37] font-mono">₾{stat.barberEarnings.toFixed(2)}</span>
+                    <span className="text-[9px] text-[var(--text-dim)] block">Today's Share</span>
                   </div>
 
-                  <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-1">
-                    <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] block">Net Remaining Owed</span>
-                    <div className="text-xl font-black font-mono text-[#D4AF37]">
-                      ₾{stat.remainingOwed.toFixed(2)}
-                    </div>
-                    <span className="text-[11px] text-[#D4AF37]/80 block font-semibold">
-                      Current balance due
-                    </span>
+                  <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Monthly Earnings</span>
+                    <span className="text-lg font-black text-emerald-500 font-mono">₾{stat.monthEarnings.toFixed(2)}</span>
+                    <span className="text-[9px] text-[var(--text-dim)] block">MTD Accumulated</span>
                   </div>
                 </div>
 
-                {/* 3. Two-Column Deep-Dive: Ledger & Advances */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-2">
-                  
-                  {/* Left: Today's Assigned Appointments & Services */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-xs uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5">
-                        <CalendarCheck className="w-4 h-4 text-[#D4AF37]" />
-                        <span>Today's Client Queue & Service Ledger</span>
-                      </h4>
-                      <span className="text-xs font-mono font-bold text-[var(--text-muted)]">
-                        {barberBookings.length} clients
-                      </span>
-                    </div>
+                {/* 3. Service History Ledger */}
+                <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    Today's Service History ({barberBookings.length})
+                  </h4>
 
-                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                      {barberBookings.length === 0 ? (
-                        <div className="p-6 text-center text-xs text-[var(--text-dim)] border border-dashed border-[var(--border-subtle)] rounded-xl">
-                          No clients assigned to {stat.barber.name} today yet.
-                        </div>
-                      ) : (
-                        barberBookings.map((b) => (
-                          <div
-                            key={b.id}
-                            className="p-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between text-xs hover:border-[var(--border-card)] transition-colors"
-                          >
-                            <div className="space-y-0.5">
-                              <div className="flex items-center gap-2">
-                                <span className="font-mono font-bold text-[var(--text-main)]">{b.customerName}</span>
-                                <span className={`text-[9px] font-bold uppercase px-1.5 py-0.2 rounded ${
-                                  b.status.toLowerCase() === 'completed'
-                                    ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                                    : b.status.toLowerCase() === 'arrived' || b.status.toLowerCase() === 'in service'
-                                    ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20 animate-pulse'
-                                    : 'bg-[var(--bg-card)] text-[var(--text-dim)] border border-[var(--border-subtle)]'
-                                }`}>
-                                  {b.status}
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-[var(--text-muted)]">{b.serviceName} • {b.time}</p>
-                            </div>
-
-                            <div className="text-right">
-                              <span className="font-mono font-bold text-[var(--text-main)] block">
-                                ₾{b.price} GEL
-                              </span>
-                              <span className="text-[10px] text-emerald-500 font-semibold font-mono">
-                                Cut: ₾{(b.price * 0.5).toFixed(2)}
-                              </span>
-                            </div>
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                    {barberBookings.length === 0 ? (
+                      <div className="text-xs text-[var(--text-dim)] py-3 text-center">No bookings completed yet today.</div>
+                    ) : (
+                      barberBookings.map((apt) => (
+                        <div key={apt.id} className="p-2.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between text-xs">
+                          <div>
+                            <span className="font-bold text-[var(--text-main)] block">{apt.customerName}</span>
+                            <span className="text-[10px] text-[var(--text-dim)]">{apt.time} • {apt.serviceName} ({apt.source})</span>
                           </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: Cash Advances & Payouts Record */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-xs uppercase tracking-wider text-[var(--text-main)] flex items-center gap-1.5">
-                        <ArrowDownRight className="w-4 h-4 text-rose-500" />
-                        <span>Advances & Disbursed Draws</span>
-                      </h4>
-                      <span className="text-xs font-mono font-bold text-rose-500">
-                        -₾{stat.totalWithdrawn.toFixed(2)} GEL
-                      </span>
-                    </div>
-
-                    <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                      {barberWithdrawalsList.length === 0 ? (
-                        <div className="p-6 text-center text-xs text-[var(--text-dim)] border border-dashed border-[var(--border-subtle)] rounded-xl">
-                          No cash advances taken by this barber this month.
-                        </div>
-                      ) : (
-                        barberWithdrawalsList.map((w) => (
-                          <div
-                            key={w.id}
-                            className="p-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between text-xs"
-                          >
-                            <div>
-                              <div className="font-bold text-[var(--text-main)]">{w.reason}</div>
-                              <div className="text-[10px] text-[var(--text-muted)] font-mono">{w.date}</div>
-                            </div>
-                            <span className="font-mono font-bold text-rose-500 text-sm">
-                              -₾{w.amount.toFixed(2)} GEL
+                          <div className="text-right">
+                            <span className="font-mono font-bold text-[#D4AF37]">₾{apt.price.toFixed(2)}</span>
+                            <span className={`text-[9px] px-1.5 py-0.2 rounded ml-1 font-mono uppercase ${
+                              apt.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-500/10 text-zinc-400'
+                            }`}>
+                              {apt.status}
                             </span>
                           </div>
-                        ))
-                      )}
-                    </div>
+                        </div>
+                      ))
+                    )}
                   </div>
-
                 </div>
+
               </div>
             );
           }
 
-          // Compact Default Card (Collapsible Summary)
+          // Compact Barber Card
           return (
             <div
               key={stat.barber.id}
-              className="card-executive p-5 space-y-4 hover:border-[#D4AF37] transition-all flex flex-col justify-between"
+              className="card-executive p-4 sm:p-5 flex flex-col justify-between transition-all hover:border-[#D4AF37]"
             >
-              <div className="space-y-4">
+              <div>
                 {/* Header */}
-                <div 
-                  className="flex items-start justify-between cursor-pointer group"
-                  onClick={() => setExpandedBarberId(stat.barber.id)}
-                  title="Click to view full dossier & ledger"
-                >
+                <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     <img
                       src={stat.barber.avatar}
                       alt={stat.barber.name}
-                      className="w-12 h-12 rounded-xl object-cover border border-[var(--border-subtle)] group-hover:border-[#D4AF37] transition-colors"
+                      className="w-12 h-12 rounded-xl object-cover border border-[var(--border-subtle)] shadow-xs shrink-0"
                     />
                     <div>
-                      <h3 className="font-bold text-sm text-[var(--text-main)] group-hover:text-[#D4AF37] transition-colors">
+                      <h3 className="font-extrabold text-sm text-[var(--text-main)]">
                         {stat.barber.name}
                       </h3>
-                      <p className="text-[11px] text-[var(--text-muted)]">{stat.barber.specialty}</p>
+                      <p className="text-[11px] text-[var(--text-muted)]">
+                        {stat.barber.specialty}
+                      </p>
+                      <span className="text-[9px] font-mono text-[var(--text-dim)]">
+                        {barberBranch?.shortName} • {stat.barber.workingHours}h shift
+                      </span>
                     </div>
                   </div>
-                  <span className="badge-status badge-gold shrink-0">
+
+                  <span className="badge-status badge-gold text-[9px] px-1.5 py-0.5">
                     50% Cut
                   </span>
                 </div>
 
-                {/* Metrics Breakdown */}
-                <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)] grid grid-cols-3 text-center">
-                  <div>
-                    <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">Clients</span>
-                    <span className="text-xl font-black text-[var(--text-main)] font-mono">{stat.clientsServedToday}</span>
-                    <span className="text-[9px] text-[var(--text-muted)] block">today</span>
+                {/* 2-Column Stats */}
+                <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-[var(--border-subtle)] text-xs">
+                  <div className="p-2 bg-[var(--bg-subtle)] rounded-lg">
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Today Revenue</span>
+                    <span className="font-mono font-black text-sm text-[var(--text-main)]">₾{stat.revenueGenerated.toFixed(0)}</span>
                   </div>
-                  <div className="border-x border-[var(--border-subtle)]">
-                    <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">Services</span>
-                    <span className="text-xl font-black text-[var(--text-main)] font-mono">{stat.servicesCompleted}</span>
-                    <span className="text-[9px] text-[var(--text-muted)] block">cuts/trims</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">Hours</span>
-                    <span className="text-xl font-black text-[var(--text-main)] font-mono">{stat.workingHours}h</span>
-                    <span className="text-[9px] text-[var(--text-muted)] block">shift</span>
-                  </div>
-                </div>
 
-                <div className="space-y-1.5 text-xs text-[var(--text-muted)]">
-                  <div className="flex justify-between">
-                    <span>Revenue Generated:</span>
-                    <span className="text-[var(--text-main)] font-bold font-mono">₾{stat.revenueGenerated.toFixed(2)} GEL</span>
-                  </div>
-                  <div className="flex justify-between text-emerald-500 dark:text-emerald-400 font-semibold">
-                    <span>Barber 50% Share:</span>
-                    <span className="font-mono">₾{stat.barberEarnings.toFixed(2)} GEL</span>
-                  </div>
-                  <div className="flex justify-between text-rose-500 dark:text-rose-400">
-                    <span>Mid-Month Advances:</span>
-                    <span className="font-mono">-₾{stat.totalWithdrawn.toFixed(2)} GEL</span>
+                  <div className="p-2 bg-[var(--bg-subtle)] rounded-lg">
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Clients Served</span>
+                    <span className="font-mono font-black text-sm text-emerald-500">{stat.clientsServedToday}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Wallet Balance & Expand Action */}
-              <div className="pt-3 border-t border-[var(--border-subtle)] space-y-2">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">Remaining Owed</span>
-                    <span className="text-sm font-black text-[#D4AF37] font-mono">
-                      ₾{stat.remainingOwed.toFixed(2)} GEL
-                    </span>
-                  </div>
-
-                  <button
-                    onClick={() => setWithdrawModalBarberId(stat.barber.id)}
-                    className="btn-secondary text-xs py-1.5 px-2.5"
-                  >
-                    <ArrowDownRight className="w-3.5 h-3.5 text-[#D4AF37]" />
-                    <span>Advance</span>
-                  </button>
-                </div>
-
+              {/* Action */}
+              <div className="mt-4 pt-2 border-t border-[var(--border-subtle)]">
                 <button
                   onClick={() => setExpandedBarberId(stat.barber.id)}
                   className="w-full py-1.5 px-3 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[#D4AF37] text-xs font-semibold text-[var(--text-main)] flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
                 >
-                  <span>View Full Dossier & Ledger</span>
+                  <span>View Chair Dossier</span>
                   <ChevronDown className="w-3.5 h-3.5 text-[#D4AF37]" />
                 </button>
               </div>
@@ -360,71 +325,6 @@ export const BarbersView: React.FC = () => {
           );
         })}
       </div>
-
-      {/* Give Advance Modal */}
-      {withdrawModalBarberId && activeModalBarber && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="card-executive w-full max-w-sm p-5 space-y-4 shadow-2xl animate-scale-in">
-            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
-              <h3 className="font-bold text-sm text-[var(--text-main)]">
-                Give Advance: {activeModalBarber.barber.name}
-              </h3>
-              <button 
-                onClick={() => setWithdrawModalBarberId(null)} 
-                className="text-[var(--text-muted)] hover:text-[var(--text-main)] text-lg p-1"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleDisburse} className="space-y-3 text-xs">
-              <div className="p-2.5 bg-[var(--bg-subtle)] rounded-lg border border-[var(--border-subtle)] flex justify-between">
-                <span className="text-[var(--text-muted)]">Remaining Owed:</span>
-                <span className="font-bold font-mono text-[#D4AF37]">₾{activeModalBarber.remainingOwed.toFixed(2)} GEL</span>
-              </div>
-
-              <div>
-                <label className="block text-[var(--text-muted)] mb-1 font-semibold">Advance Amount (GEL) *</label>
-                <input
-                  type="number"
-                  min="5"
-                  step="5"
-                  value={withdrawAmount}
-                  onChange={(e) => setWithdrawAmount(e.target.value)}
-                  className="w-full text-emerald-500 dark:text-emerald-400 font-mono font-bold text-base"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-[var(--text-muted)] mb-1 font-semibold">Reason / Memo</label>
-                <input
-                  type="text"
-                  value={withdrawReason}
-                  onChange={(e) => setWithdrawReason(e.target.value)}
-                  className="w-full"
-                />
-              </div>
-
-              <div className="pt-2 flex justify-end gap-2 border-t border-[var(--border-subtle)]">
-                <button
-                  type="button"
-                  onClick={() => setWithdrawModalBarberId(null)}
-                  className="btn-secondary"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="btn-primary-gold"
-                >
-                  Disburse Cash
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
     </div>
   );

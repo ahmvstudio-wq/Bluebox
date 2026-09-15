@@ -46,6 +46,7 @@ export const FinanceView: React.FC = () => {
   const [expenseTitle, setExpenseTitle] = useState('');
   const [expenseDescription, setExpenseDescription] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
+  const [expenseBarberId, setExpenseBarberId] = useState<string>('all');
 
   // Withdrawal Form Modal
   const [showWithdrawalModal, setShowWithdrawalModal] = useState(false);
@@ -58,16 +59,22 @@ export const FinanceView: React.FC = () => {
   const handleExpenseSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!expenseTitle.trim() || !parseFloat(expenseAmount)) return;
+    const targetBarber = branchBarbers.find(b => b.id === expenseBarberId);
+    const fullDesc = targetBarber 
+      ? `Allocated to ${targetBarber.name}: ${expenseDescription.trim() || 'Supplies'}` 
+      : (expenseDescription.trim() || undefined);
+
     addExpense(
       expenseTitle.trim(), 
       parseFloat(expenseAmount), 
       expenseCategory, 
-      expenseDescription.trim() || undefined,
+      fullDesc,
       currentBranch
     );
     setExpenseTitle('');
     setExpenseDescription('');
     setExpenseAmount('');
+    setExpenseBarberId('all');
     setShowExpenseModal(false);
   };
 
@@ -492,6 +499,22 @@ export const FinanceView: React.FC = () => {
                   <option value="Customer-related">Customer-related (Espresso, Beverages, Lounge)</option>
                   <option value="Barber/worker">Barber/worker (Clipper Blades, Maintenance)</option>
                   <option value="Business">Business (Internet, Licenses, Terminal)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">Assign to Barber (Optional)</label>
+                <select
+                  value={expenseBarberId}
+                  onChange={(e) => setExpenseBarberId(e.target.value)}
+                  className="w-full font-semibold"
+                >
+                  <option value="all">General Shop / All Staff</option>
+                  {branchBarbers.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} ({b.specialty})
+                    </option>
+                  ))}
                 </select>
               </div>
 

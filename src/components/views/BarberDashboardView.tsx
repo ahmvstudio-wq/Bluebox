@@ -48,7 +48,8 @@ export const BarberDashboardView: React.FC = () => {
     markCustomerArrived,
     completeService,
     addWalkIn,
-    createBooking
+    createBooking,
+    addExpense
   } = useCash();
 
   const [activeTab, setActiveTab] = useState<'appointments' | 'history' | 'withdrawals' | 'profile'>('appointments');
@@ -57,6 +58,13 @@ export const BarberDashboardView: React.FC = () => {
   // Modal States for Barber to Create New Entries
   const [isWalkInModalOpen, setIsWalkInModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+
+  // Expense Form State (Barber Direct Log)
+  const [expenseTitle, setExpenseTitle] = useState('');
+  const [expenseAmount, setExpenseAmount] = useState('');
+  const [expenseCategory, setExpenseCategory] = useState<'Operational' | 'Barber/worker' | 'Customer-related'>('Barber/worker');
+  const [expenseNotes, setExpenseNotes] = useState('');
 
   // Walk-In Form State
   const [walkInName, setWalkInName] = useState('');
@@ -219,16 +227,25 @@ export const BarberDashboardView: React.FC = () => {
             className="btn-primary-gold text-xs py-2 px-3.5 flex items-center gap-1.5 shadow-md"
           >
             <Footprints className="w-3.5 h-3.5" />
-            <span>+ Log Walk-In Client</span>
+            <span>+ Log Walk-In</span>
           </button>
 
-          {/* 2. Book Chair Button */}
+          {/* 2. Direct Expense Button (As Requested in Meeting) */}
+          <button
+            onClick={() => setIsExpenseModalOpen(true)}
+            className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/30 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+          >
+            <Banknote className="w-3.5 h-3.5" />
+            <span>+ Add Expense</span>
+          </button>
+
+          {/* 3. Book Chair Button */}
           <button
             onClick={() => setIsBookingModalOpen(true)}
             className="px-3.5 py-2 rounded-xl bg-[#18181B] dark:bg-[#27272A] hover:bg-[#27272A] text-white text-xs font-bold flex items-center gap-1.5 shadow-md border border-[var(--border-card)] transition-all"
           >
             <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" />
-            <span>+ Book My Chair</span>
+            <span>+ Book Slot</span>
           </button>
 
           {/* Switch to Management View */}
@@ -656,42 +673,42 @@ export const BarberDashboardView: React.FC = () => {
               </div>
             </div>
 
-            {/* Compensation & Contract Structure */}
+            {/* Compensation & Performance Metrics */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">
-                Contract & Commission Model
+                Monthly Performance & Earnings
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
-                  <div className="text-[11px] text-[var(--text-muted)] font-medium">Split Agreement</div>
+                  <div className="text-[11px] text-[var(--text-muted)] font-medium">Total Cuts Completed (MTD)</div>
                   <div className="text-2xl font-black font-mono text-[#D4AF37] mt-1">
-                    {(currentBarber.commissionRate * 100).toFixed(0)}% / {((1 - currentBarber.commissionRate) * 100).toFixed(0)}%
+                    {completedHistory.length} Cuts
                   </div>
-                  <div className="text-[10px] text-[var(--text-dim)] mt-1">50% Net Ticket on all cuts</div>
+                  <div className="text-[10px] text-[var(--text-dim)] mt-1">50% guaranteed commission rate</div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
-                  <div className="text-[11px] text-[var(--text-muted)] font-medium">Accumulated This Month</div>
+                  <div className="text-[11px] text-[var(--text-muted)] font-medium">Accumulated Earnings (MTD)</div>
                   <div className="text-2xl font-black font-mono text-emerald-500 mt-1">
                     ₾{myMonthEarnings.toFixed(2)}
                   </div>
-                  <div className="text-[10px] text-[var(--text-dim)] mt-1">From {completedHistory.length} completed cuts</div>
+                  <div className="text-[10px] text-[var(--text-dim)] mt-1">Earned across completed services</div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
-                  <div className="text-[11px] text-[var(--text-muted)] font-medium">Advances / Paid Out</div>
+                  <div className="text-[11px] text-[var(--text-muted)] font-medium">Disbursed Advances / Paid</div>
                   <div className="text-2xl font-black font-mono text-amber-500 mt-1">
                     ₾{myTotalWithdrawn.toFixed(2)}
                   </div>
-                  <div className="text-[10px] text-[var(--text-dim)] mt-1">Across {myWithdrawals.length} cash disbursements</div>
+                  <div className="text-[10px] text-[var(--text-dim)] mt-1">{myWithdrawals.length} cash disbursements</div>
                 </div>
 
                 <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[#D4AF37]/40 bg-[#D4AF37]/5">
-                  <div className="text-[11px] text-[#D4AF37] font-bold">Outstanding Owed to You</div>
+                  <div className="text-[11px] text-[#D4AF37] font-bold">Outstanding Balance Owed</div>
                   <div className="text-2xl font-black font-mono text-[#D4AF37] mt-1">
                     ₾{myRemainingBalance.toFixed(2)}
                   </div>
-                  <div className="text-[10px] text-[var(--text-dim)] mt-1">Payable upon end of cycle</div>
+                  <div className="text-[10px] text-[var(--text-dim)] mt-1">Payable by shop owner</div>
                 </div>
               </div>
             </div>
@@ -1031,6 +1048,120 @@ export const BarberDashboardView: React.FC = () => {
                   className="btn-primary-gold"
                 >
                   Confirm Booking for {bookingTime}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 3. BARBER DIRECT ADD EXPENSE MODAL (As Requested in Meeting) */}
+      {isExpenseModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4 animate-scale-in max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-rose-500/10 text-rose-500">
+                  <Banknote className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-[var(--text-main)]">Log Shop Expense</h3>
+                  <p className="text-xs text-[var(--text-muted)]">Record product or supply purchase for your chair</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsExpenseModalOpen(false)}
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-subtle)]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!expenseTitle.trim() || !parseFloat(expenseAmount)) return;
+                addExpense(
+                  expenseTitle.trim(),
+                  parseFloat(expenseAmount),
+                  expenseCategory,
+                  `Logged by ${currentBarber.name}: ${expenseNotes.trim() || 'Station supply'}`,
+                  currentBarber.branchId
+                );
+                setToastMessage(`✓ Expense recorded: "${expenseTitle.trim()}" (₾${parseFloat(expenseAmount).toFixed(2)} GEL)`);
+                setExpenseTitle('');
+                setExpenseAmount('');
+                setExpenseNotes('');
+                setIsExpenseModalOpen(false);
+                setTimeout(() => setToastMessage(null), 4000);
+              }}
+              className="space-y-3.5 text-xs"
+            >
+              <div>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">Expense Item / Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Neck strips, Barbicide, Towels, Wax"
+                  value={expenseTitle}
+                  onChange={(e) => setExpenseTitle(e.target.value)}
+                  className="w-full font-medium"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">Category *</label>
+                <select
+                  value={expenseCategory}
+                  onChange={(e) => setExpenseCategory(e.target.value as any)}
+                  className="w-full font-semibold"
+                >
+                  <option value="Barber/worker">Barber / Station Supplies</option>
+                  <option value="Operational">Operational Expenses</option>
+                  <option value="Customer-related">Customer Amenities</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">Amount Spent (GEL) *</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-[var(--text-dim)]">₾</span>
+                  <input
+                    type="number"
+                    step="0.5"
+                    required
+                    placeholder="25.00"
+                    value={expenseAmount}
+                    onChange={(e) => setExpenseAmount(e.target.value)}
+                    className="w-full pl-8 font-mono font-bold text-sm text-rose-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">Notes / Memo (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Bought from local supplier with receipt"
+                  value={expenseNotes}
+                  onChange={(e) => setExpenseNotes(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2 border-t border-[var(--border-subtle)]">
+                <button
+                  type="button"
+                  onClick={() => setIsExpenseModalOpen(false)}
+                  className="btn-secondary"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary-gold"
+                >
+                  Record Expense
                 </button>
               </div>
             </form>
