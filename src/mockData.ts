@@ -12,8 +12,8 @@ import {
 export const DEFAULT_ADMIN: AdminUser = {
   role: 'admin',
   id: 'admin-1',
-  name: 'Irakli Owner',
-  email: 'owner@blackbox.ge',
+  name: 'Admin',
+  email: 'admin@blackbox.ge',
   avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80',
 };
 

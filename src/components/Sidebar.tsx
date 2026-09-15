@@ -286,7 +286,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               )}
               <div className="min-w-0">
                 <span className="text-xs font-bold text-[var(--text-main)] truncate block">
-                  {currentUser?.name || 'Irakli (Owner)'}
+                  {currentUser?.name || 'Admin'}
                 </span>
                 <span className="text-[10px] text-[var(--text-muted)] font-medium block">
                   Store Owner
@@ -573,7 +573,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {currentUser?.name?.slice(0, 2).toUpperCase() || 'AD'}
                 </div>
                 <div className="min-w-0">
-                  <span className="text-xs font-bold text-[var(--text-main)] truncate block">{currentUser?.name || 'Irakli'}</span>
+                  <span className="text-xs font-bold text-[var(--text-main)] truncate block">{currentUser?.name || 'Admin'}</span>
                   <span className="text-[10px] text-[var(--text-muted)] block">Store Owner</span>
                 </div>
               </div>
