@@ -146,7 +146,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <h1 className="font-black text-base tracking-wide text-[var(--text-main)] font-['Inter',sans-serif]">
                   Blackbox
                 </h1>
-                <span className="text-[10px] font-black px-1.5 py-0.2 rounded bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40 tracking-wider">
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40 tracking-wider">
                   BARBER
                 </span>
               </div>
@@ -182,7 +182,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
                 {item.badge && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-bold shrink-0 transition-all duration-200 ${
+                    className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-bold shrink-0 transition-all duration-200 ${
                       isActive
                         ? 'bg-[#D4AF37] text-black shadow-xs'
                         : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border-subtle)] group-hover:border-[var(--border-card)]'
@@ -429,7 +429,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div>
                   <div className="flex items-center gap-1.5">
                     <span className="font-extrabold text-sm tracking-wide text-[var(--text-main)]">Blackbox</span>
-                    <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">
+                    <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">
                       BARBER
                     </span>
                   </div>
@@ -500,7 +500,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       <span>{item.label}</span>
                     </div>
                     {item.badge && (
-                      <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-bold ${
+                      <span className={`text-[10px] px-2 py-0.5 rounded-md font-mono font-bold ${
                         isActive ? 'bg-[#D4AF37] text-black' : 'bg-[var(--bg-subtle)] text-[var(--text-dim)]'
                       }`}>
                         {item.badge}

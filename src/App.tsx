@@ -38,7 +38,7 @@ export const App: React.FC = () => {
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-extrabold text-xs sm:text-sm tracking-wide text-[var(--text-main)]">Blackbox</span>
-                <span className="text-[9px] font-black px-1.5 py-0.2 rounded bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">BARBER</span>
+                <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">BARBER</span>
               </div>
               <span className="text-[10px] text-[var(--text-muted)] block sm:inline">Chair POS • {currentUser.name}</span>
             </div>

@@ -98,7 +98,7 @@ export const BranchesView: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <h3 className="font-extrabold text-base text-[var(--text-main)]">{branch.name}</h3>
                     {isCurrent && (
-                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">
                         Active
                       </span>
                     )}

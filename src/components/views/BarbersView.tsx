@@ -69,76 +69,86 @@ export const BarbersView: React.FC = () => {
         </div>
       </div>
 
-      {/* 1. Top Performance Leaderboard Banner (As Requested in Meeting) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+      {/* 1. Branch Performance Key Metrics Banner */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         
-        {/* Top Earner */}
-        <div className="card-executive p-3.5 sm:p-4 border-[#D4AF37]/40">
+        {/* Metric 1: Today's Services Revenue */}
+        <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Top Earner
+              Services Revenue
             </span>
-            <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-1.5 py-0.5 flex items-center gap-1">
-              <Award className="w-3 h-3 text-[#D4AF37]" /> Leader
-            </span>
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-[#D4AF37]">
+              <TrendingUp className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="mt-2">
-            <span className="text-base sm:text-lg font-extrabold text-[var(--text-main)] block truncate">
-              {topRevenueBarber?.barber.name || 'Barber #1'}
+          <div className="mt-3">
+            <span className="text-xl sm:text-2xl font-black text-[var(--text-main)] font-mono block">
+              ₾{totalBranchRevenue.toFixed(2)}
             </span>
-            <span className="text-xs font-mono font-bold text-[#D4AF37]">
-              ₾{topRevenueBarber?.revenueGenerated.toFixed(2) || '0.00'} GEL
+            <span className="text-[11px] text-emerald-500 dark:text-emerald-400 font-semibold block mt-0.5">
+              Today's Gross Output
             </span>
           </div>
         </div>
 
-        {/* Most Cuts */}
-        <div className="card-executive p-3.5 sm:p-4">
+        {/* Metric 2: Total Cuts Completed */}
+        <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Most Cuts Served
+              Total Cuts Done
             </span>
-            <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-1.5 py-0.5">Efficiency</span>
+            <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-500">
+              <Scissors className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="mt-2">
-            <span className="text-base sm:text-lg font-extrabold text-[var(--text-main)] block truncate">
-              {topCutsBarber?.barber.name || 'Barber #1'}
+          <div className="mt-3">
+            <span className="text-xl sm:text-2xl font-black text-[var(--text-main)] font-mono block">
+              {totalBranchCuts} {totalBranchCuts === 1 ? 'Client' : 'Clients'}
             </span>
-            <span className="text-xs font-mono font-bold text-emerald-500">
-              {topCutsBarber?.servicesCompleted || 0} clients served
+            <span className="text-[11px] text-[var(--text-muted)] block mt-0.5">
+              Across all branch stations
             </span>
           </div>
         </div>
 
-        {/* Average Ticket */}
-        <div className="card-executive p-3.5 sm:p-4">
+        {/* Metric 3: Branch Avg Ticket */}
+        <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
               Branch Avg Ticket
             </span>
-            <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-1.5 py-0.5">Benchmark</span>
+            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+              <Award className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="mt-2">
-            <span className="text-xl sm:text-2xl font-black text-[var(--text-main)] font-mono">
-              ₾{avgTicket.toFixed(1)}
+          <div className="mt-3">
+            <span className="text-xl sm:text-2xl font-black text-[var(--text-main)] font-mono block">
+              ₾{avgTicket.toFixed(1)} GEL
             </span>
-            <span className="text-[10px] text-[var(--text-dim)] block">per client visit</span>
+            <span className="text-[11px] text-[var(--text-muted)] block mt-0.5">
+              Per completed visit
+            </span>
           </div>
         </div>
 
-        {/* Active Chairs */}
-        <div className="card-executive p-3.5 sm:p-4">
+        {/* Metric 4: Active Stations */}
+        <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
               Active Stations
             </span>
-            <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-1.5 py-0.5">Staff</span>
+            <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
+              <Users className="w-3.5 h-3.5" />
+            </div>
           </div>
-          <div className="mt-2">
-            <span className="text-xl sm:text-2xl font-black text-[#D4AF37] font-mono">
+          <div className="mt-3">
+            <span className="text-xl sm:text-2xl font-black text-[#D4AF37] font-mono block">
               {barberPerformanceList.length} Chairs
             </span>
-            <span className="text-[10px] text-[var(--text-dim)] block">{activeBranchData.shortName} roster</span>
+            <span className="text-[11px] text-[var(--text-muted)] block mt-0.5">
+              {activeBranchData.name}
+            </span>
           </div>
         </div>
 
@@ -248,8 +258,8 @@ export const BarbersView: React.FC = () => {
                           </div>
                           <div className="text-right">
                             <span className="font-mono font-bold text-[#D4AF37]">₾{apt.price.toFixed(2)}</span>
-                            <span className={`text-[9px] px-1.5 py-0.2 rounded ml-1 font-mono uppercase ${
-                              apt.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-500/10 text-zinc-400'
+                            <span className={`text-[9px] px-2 py-0.5 rounded-md ml-1 font-mono uppercase font-bold ${
+                              apt.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
                             }`}>
                               {apt.status}
                             </span>
