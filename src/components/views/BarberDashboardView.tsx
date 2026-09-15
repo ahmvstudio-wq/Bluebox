@@ -201,7 +201,7 @@ export const BarberDashboardView: React.FC = () => {
             </p>
             <div className="flex items-center gap-1.5 text-[10px] text-emerald-500 dark:text-emerald-400 font-semibold mt-1">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Private Chair View • Click to view full Profile & Contract</span>
+              <span>Private Barber View • Click to view full Profile & Contract</span>
             </div>
           </div>
         </div>

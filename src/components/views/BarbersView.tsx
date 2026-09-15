@@ -200,7 +200,7 @@ export const BarbersView: React.FC = () => {
                       className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
                     >
                       <UserCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span>Switch to Chair View</span>
+                      <span>Switch to Barber View</span>
                     </button>
 
                     <button

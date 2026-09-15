@@ -524,7 +524,7 @@ export const DashboardView: React.FC = () => {
                 className="btn-primary-gold text-xs py-2 px-4 font-bold flex items-center gap-1.5 shadow-sm active:scale-95"
               >
                 <UserCheck className="w-4 h-4" />
-                <span>Switch to Chair View</span>
+                <span>Switch to Barber View</span>
               </button>
 
               <button
