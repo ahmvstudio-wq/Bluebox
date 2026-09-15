@@ -105,9 +105,11 @@ export const BarberDashboardView: React.FC = () => {
     );
   }
 
-  // Filter appointments
-  const upcomingAppointments = myAppointments.filter((a) => a.status !== 'completed');
-  const completedHistory = myAppointments.filter((a) => a.status === 'completed');
+  // Filter appointments with case-insensitive normalization
+  const upcomingAppointments = myAppointments.filter(
+    (a) => a.status.toLowerCase() !== 'completed' && a.status.toLowerCase() !== 'cancelled'
+  );
+  const completedHistory = myAppointments.filter((a) => a.status.toLowerCase() === 'completed');
   const assignedBranch = branches.find((b) => b.id === currentBarber.branchId);
 
   // 1. Handle Barber Adding a Walk-In Customer
@@ -425,8 +427,8 @@ export const BarberDashboardView: React.FC = () => {
             </div>
           ) : (
             upcomingAppointments.map((apt) => {
-              const isScheduled = apt.status === 'scheduled';
-              const isArrived = apt.status === 'arrived';
+              const isScheduled = apt.status.toLowerCase() === 'scheduled';
+              const isArrived = apt.status.toLowerCase() === 'arrived' || apt.status.toLowerCase() === 'in service' || apt.status.toLowerCase() === 'in_service';
 
               return (
                 <div
@@ -435,6 +437,7 @@ export const BarberDashboardView: React.FC = () => {
                     isArrived ? 'border-amber-500/50 bg-[var(--bg-card-hover)] ring-1 ring-amber-500/20' : ''
                   }`}
                 >
+                  {/* Card Header Badges */}
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="px-2.5 py-1 rounded-md bg-[var(--bg-subtle)] font-mono text-xs font-bold text-[var(--text-main)] border border-[var(--border-subtle)]">
@@ -456,11 +459,17 @@ export const BarberDashboardView: React.FC = () => {
                     )}
                     {isArrived && (
                       <span className="badge-status badge-amber text-xs animate-pulse">
-                        ● In Chair / Arrived
+                        ● In Chair / Active
+                      </span>
+                    )}
+                    {!isScheduled && !isArrived && (
+                      <span className="badge-status badge-neutral text-xs">
+                        {apt.status}
                       </span>
                     )}
                   </div>
 
+                  {/* Customer Info & Service Value */}
                   <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-3">
                     <div className="min-w-0 pr-4">
                       <h4 className="font-bold text-base text-[var(--text-main)] truncate">{apt.customerName}</h4>
@@ -477,43 +486,54 @@ export const BarberDashboardView: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Direct Chair Action Stepper */}
+                  {/* Direct Fulfil Entry & Stepper Action Toolbar */}
                   <div className="pt-3 border-t border-[var(--border-subtle)]">
-                    {isScheduled && (
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                        <span className="text-xs text-[var(--text-muted)]">Customer arrived at your chair?</span>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
+                      
+                      {/* Left: Guidance message */}
+                      <div className="text-xs font-semibold text-[var(--text-main)] flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <span>
+                          {isArrived
+                            ? 'Haircut in progress — Fulfil & record payment:'
+                            : 'Ready to serve — Fulfil entry or mark arrived:'}
+                        </span>
+                      </div>
+
+                      {/* Right: Actions (Mark Arrived, Fulfil Cash, Fulfil Card) */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        {isScheduled && (
+                          <button
+                            onClick={() => markCustomerArrived(apt.id)}
+                            className="btn-secondary text-xs py-1.5 px-3 font-bold active:scale-95 transition-all text-[var(--text-main)] hover:border-[#D4AF37]"
+                            title="Mark client arrived at your station"
+                          >
+                            ● Mark In Chair
+                          </button>
+                        )}
+
+                        {/* 1. Fulfil with Cash */}
                         <button
-                          onClick={() => markCustomerArrived(apt.id)}
-                          className="btn-primary-gold text-xs py-2 px-4 font-bold active:scale-95 transition-all self-end sm:self-auto"
+                          onClick={() => completeService(apt.id, 'cash')}
+                          className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                          title="Fulfil entry and collect Cash payment"
                         >
-                          Mark Arrived
+                          <Banknote className="w-3.5 h-3.5" />
+                          <span>Fulfil Cash (₾{apt.price})</span>
+                        </button>
+
+                        {/* 2. Fulfil with Card */}
+                        <button
+                          onClick={() => completeService(apt.id, 'card')}
+                          className="px-3.5 py-1.5 rounded-lg bg-[#18181B] dark:bg-[#27272A] hover:bg-[#27272A] border border-[#D4AF37] text-[#D4AF37] font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
+                          title="Fulfil entry and collect Card payment"
+                        >
+                          <CreditCard className="w-3.5 h-3.5 text-[#D4AF37]" />
+                          <span>Fulfil Card (₾{apt.price})</span>
                         </button>
                       </div>
-                    )}
 
-                    {isArrived && (
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                        <span className="text-xs font-semibold text-amber-500 dark:text-amber-400">
-                          Haircut finished? Record payment:
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => completeService(apt.id, 'cash')}
-                            className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-                          >
-                            <Banknote className="w-3.5 h-3.5" />
-                            <span>Cash (₾{apt.price})</span>
-                          </button>
-                          <button
-                            onClick={() => completeService(apt.id, 'card')}
-                            className="px-3.5 py-2 rounded-lg bg-[#18181B] dark:bg-[#27272A] border border-[#D4AF37] text-[#D4AF37] font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
-                          >
-                            <CreditCard className="w-3.5 h-3.5" />
-                            <span>Card (₾{apt.price})</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
 
                 </div>
