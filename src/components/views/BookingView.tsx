@@ -58,7 +58,8 @@ export const BookingView: React.FC = () => {
     markCustomerInService,
     markNoShow,
     completeService,
-    updateBookingStatus
+    updateBookingStatus,
+    cancelBooking
   } = useCash();
 
   // View Mode: Kanban vs Table
@@ -379,7 +380,15 @@ export const BookingView: React.FC = () => {
                       <div className="font-bold text-[var(--text-main)]">{item.customerName}</div>
                       <div className="text-[10px] text-[var(--text-dim)]">{item.time} • {item.barberName}</div>
                     </div>
-                    <span className="text-[10px] text-rose-500">Cancelled</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] text-rose-500 font-semibold">Cancelled</span>
+                      <button
+                        onClick={() => updateBookingStatus(item.id, 'Scheduled')}
+                        className="text-[10px] text-amber-500 hover:underline font-bold"
+                      >
+                        Re-open
+                      </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -601,14 +610,24 @@ export const BookingView: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Action: Customer Arrived */}
-                      <button
-                        onClick={() => markCustomerArrived(item.id)}
-                        className="w-full btn-primary-gold text-xs py-1.5 flex items-center justify-center gap-1.5 mt-1 active:scale-[0.98] transition-transform"
-                      >
-                        <span>Mark Customer Arrived</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
+                      {/* Actions: Customer Arrived & Cancel */}
+                      <div className="flex items-center gap-1.5 mt-1">
+                        <button
+                          onClick={() => markCustomerArrived(item.id)}
+                          className="flex-1 btn-primary-gold text-xs py-1.5 flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+                        >
+                          <span>Mark Arrived</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => cancelBooking(item.id, 'Cancelled by Front Desk')}
+                          className="px-2.5 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-xs font-bold transition-all flex items-center gap-1 active:scale-95"
+                          title="Cancel Booking"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>Cancel</span>
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}
@@ -707,14 +726,24 @@ export const BookingView: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Seat Client into Chair */}
-                      <button
-                        onClick={() => markCustomerInService(item.id)}
-                        className="w-full py-2 rounded-xl bg-[#D4AF37] hover:bg-[#c49f2f] text-black font-extrabold text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-95"
-                      >
-                        <Scissors className="w-3.5 h-3.5" />
-                        <span>Seat in Chair (In Service)</span>
-                      </button>
+                      {/* Seat Client into Chair & Cancel */}
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => markCustomerInService(item.id)}
+                          className="flex-1 py-2 rounded-xl bg-[#D4AF37] hover:bg-[#c49f2f] text-black font-extrabold text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-95"
+                        >
+                          <Scissors className="w-3.5 h-3.5" />
+                          <span>Seat in Chair</span>
+                        </button>
+                        <button
+                          onClick={() => cancelBooking(item.id, 'Cancelled in Lobby')}
+                          className="px-2.5 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-xs font-bold transition-all flex items-center gap-1 active:scale-95"
+                          title="Cancel Booking"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>Cancel</span>
+                        </button>
+                      </div>
                     </div>
                   ))
                 )}
@@ -813,8 +842,8 @@ export const BookingView: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Checkout / Payment Buttons */}
-                      <div className="pt-1 flex items-center gap-2">
+                      {/* Checkout / Payment Buttons & Cancel */}
+                      <div className="pt-1 flex items-center gap-1.5">
                         <button
                           onClick={() => completeService(item.id, 'cash')}
                           className="flex-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-all active:scale-[0.98]"
@@ -828,6 +857,13 @@ export const BookingView: React.FC = () => {
                         >
                           <CreditCard className="w-3.5 h-3.5" />
                           <span>Paid Card</span>
+                        </button>
+                        <button
+                          onClick={() => cancelBooking(item.id, 'Cancelled during service')}
+                          className="p-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-colors"
+                          title="Cancel booking"
+                        >
+                          <XCircle className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -986,30 +1022,69 @@ export const BookingView: React.FC = () => {
                           </button>
                           <button
                             onClick={() => markNoShow(b.id)}
-                            className="text-[10px] text-rose-500 hover:underline px-1"
+                            className="text-[10px] text-amber-500 hover:underline px-1"
                           >
                             No-Show
+                          </button>
+                          <button
+                            onClick={() => cancelBooking(b.id, 'Cancelled in Table View')}
+                            className="text-[10px] text-rose-500 hover:underline px-1 font-bold"
+                          >
+                            Cancel
                           </button>
                         </div>
                       )}
                       {isArrivedStatus(b.status) && (
-                        <button
-                          onClick={() => markCustomerInService(b.id)}
-                          className="px-2 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-bold hover:bg-blue-500"
-                        >
-                          Seat in Chair
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => markCustomerInService(b.id)}
+                            className="px-2 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-bold hover:bg-blue-500"
+                          >
+                            Seat in Chair
+                          </button>
+                          <button
+                            onClick={() => cancelBooking(b.id, 'Cancelled in Lobby')}
+                            className="text-[10px] text-rose-500 hover:underline px-1"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       )}
                       {isInServiceStatus(b.status) && (
-                        <button
-                          onClick={() => setPaymentModalBooking(b)}
-                          className="px-2 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-bold hover:bg-emerald-500"
-                        >
-                          Checkout
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => completeService(b.id, 'cash')}
+                            className="px-2 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-bold hover:bg-emerald-500"
+                          >
+                            Paid Cash
+                          </button>
+                          <button
+                            onClick={() => completeService(b.id, 'card')}
+                            className="px-2 py-1 bg-[#18181B] dark:bg-[#27272A] border border-[#D4AF37] text-[#D4AF37] rounded-lg text-[10px] font-bold"
+                          >
+                            Paid Card
+                          </button>
+                          <button
+                            onClick={() => cancelBooking(b.id, 'Cancelled in Service')}
+                            className="text-[10px] text-rose-500 hover:underline px-1"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      )}
+                      {isCancelledStatus(b.status) && (
+                        <div className="flex items-center justify-end gap-1.5">
+                          <span className="text-[10px] text-rose-500 font-bold">Cancelled</span>
+                          <button
+                            onClick={() => updateBookingStatus(b.id, 'Scheduled')}
+                            className="text-[10px] text-amber-500 hover:underline font-bold"
+                          >
+                            Re-open
+                          </button>
+                        </div>
                       )}
                       {isCompletedStatus(b.status) && (
-                        <span className="text-[11px] text-emerald-500 font-semibold font-mono">Paid {b.paymentMethod}</span>
+                        <span className="text-[11px] text-emerald-500 font-semibold font-mono">Paid {b.paymentMethod?.toUpperCase()}</span>
                       )}
                     </td>
                   </tr>

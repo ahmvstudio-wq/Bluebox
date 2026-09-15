@@ -22,7 +22,9 @@ import {
   EyeOff,
   Lock,
   Building2,
-  MapPin
+  MapPin,
+  GraduationCap,
+  XCircle
 } from 'lucide-react';
 
 const TIME_SLOTS = [
@@ -47,12 +49,14 @@ export const BarberDashboardView: React.FC = () => {
     myRemainingBalance,
     markCustomerArrived,
     completeService,
+    updateBookingStatus,
+    cancelBooking,
     addWalkIn,
     createBooking,
     addExpense
   } = useCash();
 
-  const [activeTab, setActiveTab] = useState<'appointments' | 'history' | 'withdrawals' | 'profile'>('appointments');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'history' | 'withdrawals' | 'profile' | 'cancelled'>('appointments');
   const [showPin, setShowPin] = useState(false);
 
   // Modal States for Barber to Create New Entries
@@ -66,17 +70,21 @@ export const BarberDashboardView: React.FC = () => {
   const [expenseCategory, setExpenseCategory] = useState<'Operational' | 'Barber/worker' | 'Customer-related'>('Barber/worker');
   const [expenseNotes, setExpenseNotes] = useState('');
 
-  // Walk-In Form State
+  // Walk-In Form State (with Student Discount)
   const [walkInName, setWalkInName] = useState('');
   const [walkInPhone, setWalkInPhone] = useState('');
   const [walkInServiceId, setWalkInServiceId] = useState(services[0]?.id || 's1');
   const [walkInPaymentMethod, setWalkInPaymentMethod] = useState<'cash' | 'card'>('cash');
+  const [walkInIsStudent, setWalkInIsStudent] = useState(false);
+  const [walkInStudentIdProof, setWalkInStudentIdProof] = useState('');
 
-  // Booking Form State
+  // Booking Form State (with Student Discount)
   const [bookingName, setBookingName] = useState('');
   const [bookingPhone, setBookingPhone] = useState('');
   const [bookingServiceId, setBookingServiceId] = useState(services[0]?.id || 's1');
   const [bookingTime, setBookingTime] = useState('15:00');
+  const [bookingIsStudent, setBookingIsStudent] = useState(false);
+  const [bookingStudentIdProof, setBookingStudentIdProof] = useState('');
   const [bookingError, setBookingError] = useState<string | null>(null);
 
   // Success Feedback Toast
@@ -85,12 +93,24 @@ export const BarberDashboardView: React.FC = () => {
   const selectedWalkInService = services.find((s) => s.id === walkInServiceId) || services[0];
   const selectedBookingService = services.find((s) => s.id === bookingServiceId) || services[0];
 
+  // Dynamic Walk-in calculations
+  const walkInOriginalPrice = selectedWalkInService?.price || 0;
+  const walkInDiscountAmount = walkInIsStudent && walkInOriginalPrice ? walkInOriginalPrice * 0.2 : 0;
+  const walkInFinalPrice = walkInOriginalPrice ? walkInOriginalPrice - walkInDiscountAmount : 0;
+  const walkInBarberCut = walkInFinalPrice * (currentBarber?.commissionRate || 0.5);
+
+  // Dynamic Booking calculations
+  const bookingOriginalPrice = selectedBookingService?.price || 0;
+  const bookingDiscountAmount = bookingIsStudent && bookingOriginalPrice ? bookingOriginalPrice * 0.2 : 0;
+  const bookingFinalPrice = bookingOriginalPrice ? bookingOriginalPrice - bookingDiscountAmount : 0;
+  const bookingBarberCut = bookingFinalPrice * (currentBarber?.commissionRate || 0.5);
+
   // Calculate this barber's availability for slot picker
   const slotAvailability = useMemo(() => {
     const map: Record<string, boolean> = {};
     TIME_SLOTS.forEach((slot) => {
       const isBooked = myAppointments.some(
-        (a) => a.time === slot && a.status !== 'completed'
+        (a) => a.time === slot && a.status.toLowerCase() !== 'completed' && a.status.toLowerCase() !== 'cancelled'
       );
       map[slot] = !isBooked;
     });
@@ -110,6 +130,7 @@ export const BarberDashboardView: React.FC = () => {
     (a) => a.status.toLowerCase() !== 'completed' && a.status.toLowerCase() !== 'cancelled'
   );
   const completedHistory = myAppointments.filter((a) => a.status.toLowerCase() === 'completed');
+  const cancelledAppointments = myAppointments.filter((a) => a.status.toLowerCase() === 'cancelled');
   const assignedBranch = branches.find((b) => b.id === currentBarber.branchId);
 
   // 1. Handle Barber Adding a Walk-In Customer
@@ -123,12 +144,15 @@ export const BarberDashboardView: React.FC = () => {
       barberId: currentBarber.id,
       serviceId: walkInServiceId,
       paymentMethod: walkInPaymentMethod,
+      isStudent: walkInIsStudent,
+      studentIdProof: walkInIsStudent ? walkInStudentIdProof : undefined,
     });
 
-    const earned = selectedWalkInService?.price ? selectedWalkInService.price * currentBarber.commissionRate : 0;
-    setToastMessage(`✓ Walk-in completed for ${walkInName.trim()}! +₾${earned.toFixed(2)} GEL added to your earnings.`);
+    setToastMessage(`✓ Walk-in completed for ${walkInName.trim()}! ${walkInIsStudent ? '(Student 20% Applied) ' : ''}+₾${walkInBarberCut.toFixed(2)} GEL added to your earnings.`);
     setWalkInName('');
     setWalkInPhone('');
+    setWalkInIsStudent(false);
+    setWalkInStudentIdProof('');
     setIsWalkInModalOpen(false);
 
     setTimeout(() => setToastMessage(null), 4500);
@@ -156,14 +180,18 @@ export const BarberDashboardView: React.FC = () => {
       barberId: currentBarber.id,
       serviceId: bookingServiceId,
       time: bookingTime,
+      isStudent: bookingIsStudent,
+      studentIdProof: bookingIsStudent ? bookingStudentIdProof : undefined,
     });
 
     if (!result.success) {
       setBookingError(result.error || 'Unable to reserve this slot. Please select another time.');
     } else {
-      setToastMessage(`✓ Chair reserved for ${bookingName.trim()} at ${bookingTime}.`);
+      setToastMessage(`✓ Chair reserved for ${bookingName.trim()} at ${bookingTime}${bookingIsStudent ? ' (Student 20% Off)' : ''}.`);
       setBookingName('');
       setBookingPhone('');
+      setBookingIsStudent(false);
+      setBookingStudentIdProof('');
       setIsBookingModalOpen(false);
       setTimeout(() => setToastMessage(null), 4500);
     }
@@ -402,6 +430,20 @@ export const BarberDashboardView: React.FC = () => {
           <User className="w-4 h-4 text-[#D4AF37]" />
           <span>My Profile & Station</span>
         </button>
+
+        {cancelledAppointments.length > 0 && (
+          <button
+            onClick={() => setActiveTab('cancelled')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+              activeTab === 'cancelled'
+                ? 'bg-[#18181B] text-white dark:bg-[#27272A] border border-[var(--border-card)] shadow-sm'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-subtle)]'
+            }`}
+          >
+            <XCircle className="w-4 h-4 text-rose-500" />
+            <span>Cancelled ({cancelledAppointments.length})</span>
+          </button>
+        )}
       </div>
 
       {/* TAB 1: My Upcoming Appointments & Chair Execution */}
@@ -474,6 +516,12 @@ export const BarberDashboardView: React.FC = () => {
                     <div className="min-w-0 pr-4">
                       <h4 className="font-bold text-base text-[var(--text-main)] truncate">{apt.customerName}</h4>
                       <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">{apt.serviceName}</p>
+                      {apt.isStudent && (
+                        <div className="flex items-center gap-1 text-[11px] font-bold text-[#D4AF37] mt-1">
+                          <GraduationCap className="w-3.5 h-3.5 shrink-0" />
+                          <span>Student 20% Discount Applied</span>
+                        </div>
+                      )}
                     </div>
 
                     <div className="text-right shrink-0">
@@ -500,7 +548,7 @@ export const BarberDashboardView: React.FC = () => {
                         </span>
                       </div>
 
-                      {/* Right: Actions (Mark Arrived, Fulfil Cash, Fulfil Card) */}
+                      {/* Right: Actions (Mark Arrived, Fulfil Cash, Fulfil Card, Cancel) */}
                       <div className="flex flex-wrap items-center gap-2">
                         {isScheduled && (
                           <button
@@ -530,6 +578,20 @@ export const BarberDashboardView: React.FC = () => {
                         >
                           <CreditCard className="w-3.5 h-3.5 text-[#D4AF37]" />
                           <span>Fulfil Card (₾{apt.price})</span>
+                        </button>
+
+                        {/* 3. Cancel Booking */}
+                        <button
+                          onClick={() => {
+                            cancelBooking(apt.id, `Cancelled by Barber ${currentBarber.name}`);
+                            setToastMessage(`Booking ${apt.ticketNumber} for ${apt.customerName} has been cancelled.`);
+                            setTimeout(() => setToastMessage(null), 4000);
+                          }}
+                          className="px-3 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 font-bold text-xs flex items-center gap-1.5 active:scale-95 transition-all"
+                          title="Cancel this booking and free up time slot"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>Cancel</span>
                         </button>
                       </div>
 
@@ -628,7 +690,61 @@ export const BarberDashboardView: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 4: My Profile & Station Dossier */}
+      {/* TAB 4: Cancelled Bookings */}
+      {activeTab === 'cancelled' && (
+        <div className="card-executive p-5 space-y-3">
+          <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+            <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
+              <XCircle className="w-4 h-4 text-rose-500" />
+              Cancelled Appointments ({cancelledAppointments.length})
+            </h3>
+            <span className="text-xs text-[var(--text-dim)]">Slots freed for new walk-ins</span>
+          </div>
+
+          <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
+            {cancelledAppointments.length === 0 ? (
+              <div className="p-6 text-center text-xs text-[var(--text-dim)]">
+                No cancellations recorded today.
+              </div>
+            ) : (
+              cancelledAppointments.map((item) => (
+                <div
+                  key={item.id}
+                  className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between text-xs"
+                >
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-[var(--text-main)] text-sm">{item.customerName}</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-dim)]">
+                        {item.ticketNumber}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                      {item.serviceName} • {item.time} ({item.customerPhone})
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-rose-500">Cancelled</span>
+                    <button
+                      onClick={() => {
+                        updateBookingStatus(item.id, 'Scheduled');
+                        setToastMessage(`✓ Re-opened slot at ${item.time} for ${item.customerName}.`);
+                        setTimeout(() => setToastMessage(null), 4000);
+                      }}
+                      className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded-lg text-xs font-bold transition-all"
+                    >
+                      Re-open Slot
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: My Profile & Station Dossier */}
       {activeTab === 'profile' && (
         <div className="space-y-6">
           {/* Top Profile Card */}
@@ -910,18 +1026,58 @@ export const BarberDashboardView: React.FC = () => {
                 </div>
               </div>
 
+              {/* Student Discount Toggle */}
+              <div className="p-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-[#D4AF37]" />
+                    <div>
+                      <span className="font-bold text-xs text-[var(--text-main)]">Student 20% Discount</span>
+                      <p className="text-[10px] text-[var(--text-dim)]">Valid student ID card verification</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={walkInIsStudent}
+                      onChange={(e) => setWalkInIsStudent(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#D4AF37]"></div>
+                  </label>
+                </div>
+
+                {walkInIsStudent && (
+                  <div className="pt-2 border-t border-[var(--border-subtle)] space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Student ID / Card # (e.g. STU-9921)"
+                      value={walkInStudentIdProof}
+                      onChange={(e) => setWalkInStudentIdProof(e.target.value)}
+                      className="w-full text-xs font-mono"
+                    />
+                    <div className="flex items-center justify-between text-[11px] text-[#D4AF37] font-semibold bg-[#D4AF37]/10 p-2 rounded-lg border border-[#D4AF37]/20">
+                      <span>Discount: -20% (-₾{walkInDiscountAmount.toFixed(2)} GEL)</span>
+                      <span className="font-mono font-bold">Charged: ₾{walkInFinalPrice.toFixed(2)} GEL</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Payout Breakdown Pill */}
               <div className="p-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] uppercase text-[var(--text-dim)] block font-bold">Ticket Total</span>
+                  <span className="text-[10px] uppercase text-[var(--text-dim)] block font-bold">
+                    {walkInIsStudent ? 'Ticket Total (20% Off)' : 'Ticket Total'}
+                  </span>
                   <span className="text-base font-black text-[var(--text-main)] font-mono">
-                    {selectedWalkInService.price !== null ? `₾${selectedWalkInService.price} GEL` : 'Price TBD'}
+                    {selectedWalkInService.price !== null ? `₾${walkInFinalPrice.toFixed(2)} GEL` : 'Price TBD'}
                   </span>
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] uppercase text-[var(--text-dim)] block font-bold">Your 50% Share</span>
                   <span className="text-base font-black text-emerald-500 dark:text-emerald-400 font-mono">
-                    {selectedWalkInService.price !== null ? `+₾${(selectedWalkInService.price * 0.5).toFixed(2)} GEL` : '50% of TBD'}
+                    {selectedWalkInService.price !== null ? `+₾${walkInBarberCut.toFixed(2)} GEL` : '50% of TBD'}
                   </span>
                 </div>
               </div>
@@ -1022,6 +1178,44 @@ export const BarberDashboardView: React.FC = () => {
                 </select>
               </div>
 
+              {/* Student Discount Toggle */}
+              <div className="p-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <GraduationCap className="w-4 h-4 text-[#D4AF37]" />
+                    <div>
+                      <span className="font-bold text-xs text-[var(--text-main)]">Student 20% Discount</span>
+                      <p className="text-[10px] text-[var(--text-dim)]">Applies 20% discount on service price</p>
+                    </div>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={bookingIsStudent}
+                      onChange={(e) => setBookingIsStudent(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-9 h-5 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-zinc-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#D4AF37]"></div>
+                  </label>
+                </div>
+
+                {bookingIsStudent && (
+                  <div className="pt-2 border-t border-[var(--border-subtle)] space-y-2">
+                    <input
+                      type="text"
+                      placeholder="Student ID / Card # (Optional)"
+                      value={bookingStudentIdProof}
+                      onChange={(e) => setBookingStudentIdProof(e.target.value)}
+                      className="w-full text-xs font-mono"
+                    />
+                    <div className="flex items-center justify-between text-[11px] text-[#D4AF37] font-semibold bg-[#D4AF37]/10 p-2 rounded-lg border border-[#D4AF37]/20">
+                      <span>Discount: -20% (-₾{bookingDiscountAmount.toFixed(2)} GEL)</span>
+                      <span className="font-mono font-bold">Price: ₾{bookingFinalPrice.toFixed(2)} GEL</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Time Slot Picker */}
               <div>
                 <label className="block text-[var(--text-muted)] font-semibold mb-1.5 flex items-center justify-between">
@@ -1051,6 +1245,24 @@ export const BarberDashboardView: React.FC = () => {
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              {/* Dynamic Price Preview */}
+              <div className="p-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] uppercase text-[var(--text-dim)] block font-bold">
+                    {bookingIsStudent ? 'Booking Price (20% Off)' : 'Booking Price'}
+                  </span>
+                  <span className="text-base font-black text-[var(--text-main)] font-mono">
+                    {selectedBookingService.price !== null ? `₾${bookingFinalPrice.toFixed(2)} GEL` : 'Price TBD'}
+                  </span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] uppercase text-[var(--text-dim)] block font-bold">Your 50% Cut</span>
+                  <span className="text-base font-black text-emerald-500 dark:text-emerald-400 font-mono">
+                    {selectedBookingService.price !== null ? `+₾${bookingBarberCut.toFixed(2)} GEL` : '50% of TBD'}
+                  </span>
                 </div>
               </div>
 

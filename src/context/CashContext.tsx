@@ -116,6 +116,7 @@ interface CashContextType {
     status: BookingStatus,
     paymentMethod?: 'cash' | 'card'
   ) => void;
+  cancelBooking: (bookingId: string, reason?: string) => void;
 
   addWalkIn: (data: {
     customerName: string;
@@ -732,6 +733,21 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
+  const cancelBooking = (bookingId: string, reason?: string) => {
+    setBookings((prev) =>
+      prev.map((b) =>
+        b.id === bookingId
+          ? {
+              ...b,
+              status: 'Cancelled',
+              paymentMethod: undefined,
+              allergies: reason ? `${b.allergies && b.allergies !== 'None' ? b.allergies + ' • ' : ''}Cancelled: ${reason}` : b.allergies,
+            }
+          : b
+      )
+    );
+  };
+
   const addWalkIn = (data: {
     customerName: string;
     customerPhone?: string;
@@ -1047,6 +1063,7 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
         markNoShow,
         completeService,
         updateBookingStatus,
+        cancelBooking,
         addWalkIn,
         addExpense,
         addWithdrawal,
