@@ -14,13 +14,25 @@ import {
   Building,
   Users,
   CheckCircle2,
-  Calendar
+  Calendar,
+  AlertTriangle,
+  Lock,
+  Unlock,
+  Sliders,
+  DollarSign,
+  Scale,
+  Clock,
+  Sparkles,
+  RefreshCw,
+  Eye,
+  ShieldCheck
 } from 'lucide-react';
-import { ExpenseCategory } from '../../types';
+import { ExpenseCategory, DailyCloseStatus, BranchId } from '../../types';
 
 export const FinanceView: React.FC = () => {
   const { 
     currentBranch,
+    setCurrentBranch,
     branches,
     todayRevenue, 
     totalExpenses, 
@@ -34,11 +46,16 @@ export const FinanceView: React.FC = () => {
     barberPerformanceList,
     expensesByCategory,
     addExpense, 
-    addWithdrawal 
+    addWithdrawal,
+    reconciliations,
+    performDailyClose,
+    updateReconciliationStatus,
+    commissionBaseRule,
+    setCommissionBaseRule
   } = useCash();
 
-  // Active Ledger Tab: 'revenue' | 'expenses' | 'barber-payments'
-  const [activeTab, setActiveTab] = useState<'revenue' | 'expenses' | 'barber-payments'>('revenue');
+  // Active Ledger Tab: 'revenue' | 'expenses' | 'barber-payments' | 'reconciliation'
+  const [activeTab, setActiveTab] = useState<'revenue' | 'expenses' | 'barber-payments' | 'reconciliation'>('revenue');
 
   // Expense Form Modal
   const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -54,6 +71,12 @@ export const FinanceView: React.FC = () => {
   const [withdrawalAmount, setWithdrawalAmount] = useState('50');
   const [withdrawalReason, setWithdrawalReason] = useState('Midday advance');
 
+  // Daily Close Modal
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [physicalCashCount, setPhysicalCashCount] = useState('');
+  const [reconciliationNotes, setReconciliationNotes] = useState('');
+
+  const currentRecon = reconciliations[currentBranch];
   const activeBranchName = branches.find((b) => b.id === currentBranch)?.name || currentBranch;
 
   const handleExpenseSubmit = (e: React.FormEvent) => {
@@ -87,6 +110,16 @@ export const FinanceView: React.FC = () => {
     setShowWithdrawalModal(false);
   };
 
+  const handleReconcileSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const countVal = parseFloat(physicalCashCount);
+    if (isNaN(countVal)) return;
+    performDailyClose(currentBranch, countVal, reconciliationNotes);
+    setShowCloseModal(false);
+    setPhysicalCashCount('');
+    setReconciliationNotes('');
+  };
+
   return (
     <div className="space-y-6">
       
@@ -95,14 +128,14 @@ export const FinanceView: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
             <Wallet className="w-5 h-5 text-[#D4AF37]" />
-            Financial Operations & Cash Flow
+            Financial Operations, Audit & Cash Reconciliation
           </h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Real-time revenues, categorized operational expenses, and barber compensation settlements for {activeBranchName}.
+            Single-source atomic transaction rollup, end-of-day cash drawer balancing, and branch audit trails.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowExpenseModal(true)}
             className="btn-secondary text-xs text-rose-500 dark:text-rose-400"
@@ -112,10 +145,20 @@ export const FinanceView: React.FC = () => {
           </button>
           <button
             onClick={() => setShowWithdrawalModal(true)}
-            className="btn-primary-gold text-xs"
+            className="btn-secondary text-xs text-amber-500 dark:text-amber-400"
           >
             <ArrowDownRight className="w-3.5 h-3.5" />
             <span>+ Disburse Advance</span>
+          </button>
+          <button
+            onClick={() => {
+              setPhysicalCashCount(cashInDrawer.toString());
+              setShowCloseModal(true);
+            }}
+            className="btn-primary-gold text-xs shadow-lg shadow-[#D4AF37]/15"
+          >
+            <Scale className="w-3.5 h-3.5" />
+            <span>End-of-Day Close</span>
           </button>
         </div>
       </div>
@@ -209,6 +252,120 @@ export const FinanceView: React.FC = () => {
         </div>
       </div>
 
+      {/* Multi-Branch Reconciliation & Close Status Bar */}
+      <div className="card-executive p-4 bg-[var(--bg-card)] border border-[var(--border-subtle)] space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[var(--border-subtle)] pb-2.5">
+          <div className="flex items-center gap-2">
+            <Building className="w-4 h-4 text-[#D4AF37]" />
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
+              Multi-Branch Daily Close Status Flow
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-dim)]">
+            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>Flow: Open &rarr; Counted &rarr; Reviewed &rarr; Closed/Locked</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {branches.map((b) => {
+            const recon = reconciliations[b.id];
+            const isCurrent = b.id === currentBranch;
+            const status = recon?.status || 'open';
+            const variance = recon?.variance || 0;
+
+            const statusBadgeConfig: Record<DailyCloseStatus, { label: string; color: string }> = {
+              open: { label: 'Open', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
+              counted: { label: 'Counted', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+              reviewed: { label: 'Reviewed', color: 'bg-purple-500/10 text-purple-500 border-purple-500/20' },
+              closed: { label: 'Closed / Locked', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
+            };
+            const currentBadge = statusBadgeConfig[status];
+
+            return (
+              <div
+                key={b.id}
+                onClick={() => setCurrentBranch(b.id)}
+                className={`p-3 rounded-xl border transition-all cursor-pointer ${
+                  isCurrent
+                    ? 'bg-[#18181B] border-[#D4AF37]/40 shadow-sm ring-1 ring-[#D4AF37]/30'
+                    : 'bg-[var(--bg-subtle)] border-[var(--border-subtle)] hover:border-[var(--border-card)]'
+                }`}
+              >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-extrabold text-[var(--text-main)] flex items-center gap-1.5">
+                    {b.name}
+                    {isCurrent && <span className="text-[10px] text-[#D4AF37] font-semibold">(Active)</span>}
+                  </span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${currentBadge.color}`}>
+                    {currentBadge.label}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] pt-1 border-t border-[var(--border-subtle)]/60">
+                  <span className="text-[var(--text-dim)]">Expected Cash:</span>
+                  <span className="font-mono font-bold text-[var(--text-main)]">
+                    ₾{(recon?.expectedCash || 0).toFixed(2)}
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between text-[11px] mt-0.5">
+                  <span className="text-[var(--text-dim)]">Variance:</span>
+                  <span className={`font-mono font-bold ${
+                    variance === 0 ? 'text-emerald-500' : variance > 0 ? 'text-blue-400' : 'text-rose-500'
+                  }`}>
+                    {variance === 0 ? '₾0.00 Exact' : `${variance > 0 ? '+' : ''}₾${variance.toFixed(2)}`}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Commission Base Pricing Rule Settings Card */}
+      <div className="card-executive p-4 bg-[var(--bg-card)] border border-[var(--border-subtle)] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2.5 rounded-xl bg-[#D4AF37]/10 text-[#D4AF37] shrink-0 mt-0.5">
+            <Sliders className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-main)]">
+                Commission Pricing Base Rule (Student 20% Discount Policy)
+              </span>
+              <span className="badge-status badge-gold text-[9px] px-1.5 py-0.2">Shop Setting</span>
+            </div>
+            <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+              Choose whether barber commission split is calculated on actual discounted amount collected vs standard full list price.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center bg-[var(--bg-subtle)] p-1 rounded-xl border border-[var(--border-subtle)] shrink-0 self-end sm:self-center">
+          <button
+            onClick={() => setCommissionBaseRule('discounted')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              commissionBaseRule === 'discounted'
+                ? 'bg-[#D4AF37] text-black shadow-xs font-black'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+            }`}
+          >
+            Actual Discounted Price (e.g. ₾36)
+          </button>
+          <button
+            onClick={() => setCommissionBaseRule('list_price')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              commissionBaseRule === 'list_price'
+                ? 'bg-[#D4AF37] text-black shadow-xs font-black'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+            }`}
+          >
+            Full List Price (e.g. ₾45)
+          </button>
+        </div>
+      </div>
+
       {/* Categorized Expenses Summary Tiles */}
       <div className="space-y-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
@@ -260,7 +417,19 @@ export const FinanceView: React.FC = () => {
           }`}
         >
           <Receipt className="w-4 h-4 text-[#D4AF37]" />
-          <span>Revenue Transactions ({branchRevenueRecords.length})</span>
+          <span>Atomic Revenue Ledger ({branchRevenueRecords.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('reconciliation')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === 'reconciliation'
+              ? 'bg-[#18181B] text-white dark:bg-[#27272A] border border-[var(--border-card)] shadow-sm'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-subtle)]'
+          }`}
+        >
+          <Scale className="w-4 h-4 text-emerald-500" />
+          <span>Cash Drawer Reconciliation & Audit</span>
         </button>
 
         <button
@@ -284,7 +453,7 @@ export const FinanceView: React.FC = () => {
           }`}
         >
           <Users className="w-4 h-4 text-amber-500" />
-          <span>Barber Payments & Balances ({barberPerformanceList.length})</span>
+          <span>Barber Payout Settlements ({barberPerformanceList.length})</span>
         </button>
       </div>
 
@@ -292,9 +461,14 @@ export const FinanceView: React.FC = () => {
       {activeTab === 'revenue' && (
         <div className="card-executive p-5 overflow-hidden space-y-3">
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
-            <h3 className="text-sm font-bold text-[var(--text-main)]">
-              Revenue Transactions Log
-            </h3>
+            <div>
+              <h3 className="text-sm font-bold text-[var(--text-main)]">
+                Single Source of Truth: Settled Service Transactions Log
+              </h3>
+              <p className="text-[11px] text-[var(--text-muted)]">
+                Each completed service derives barber earnings, shop margin, and cash flow automatically.
+              </p>
+            </div>
             <span className="text-xs font-mono font-bold text-emerald-500">
               Total: ₾{todayRevenue.toFixed(2)} GEL
             </span>
@@ -347,7 +521,161 @@ export const FinanceView: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: CATEGORIZED EXPENSES LEDGER */}
+      {/* TAB 2: CASH RECONCILIATION & AUDIT SUITE */}
+      {activeTab === 'reconciliation' && currentRecon && (
+        <div className="space-y-4">
+          
+          {/* Main Reconciliation Audit Card */}
+          <div className="card-executive p-5 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border-subtle)] pb-3">
+              <div>
+                <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
+                  <Scale className="w-4 h-4 text-emerald-500" />
+                  Daily Cash Drawer Audit — {activeBranchName}
+                </h3>
+                <p className="text-[11px] text-[var(--text-muted)]">
+                  Verifies physical register cash against recorded sales to prevent leakage and detect cash variances.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[var(--text-dim)] font-semibold">Status:</span>
+                <select
+                  value={currentRecon.status}
+                  onChange={(e) => updateReconciliationStatus(currentBranch, e.target.value as DailyCloseStatus)}
+                  className="text-xs font-bold bg-[var(--bg-subtle)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1"
+                >
+                  <option value="open">Open (Active Trading)</option>
+                  <option value="counted">Counted (Physical Drawer Counted)</option>
+                  <option value="reviewed">Reviewed (Manager Verified)</option>
+                  <option value="closed">Closed / Locked (Audited)</option>
+                </select>
+
+                <button
+                  onClick={() => {
+                    setPhysicalCashCount(cashInDrawer.toString());
+                    setShowCloseModal(true);
+                  }}
+                  className="btn-primary-gold text-xs py-1.5 px-3 flex items-center gap-1.5"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Perform Count & Close</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Reconciliation Math Ledger Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3 p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
+              
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-bold text-[var(--text-dim)]">1. Opening Float</span>
+                <div className="text-lg font-black font-mono text-[var(--text-main)]">
+                  ₾{currentRecon.openingFloat.toFixed(2)}
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)]">Initial cash in register</div>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-bold text-emerald-500">(+) Cash Sales</span>
+                <div className="text-lg font-black font-mono text-emerald-500">
+                  +₾{currentRecon.cashSales.toFixed(2)}
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)]">Cash service receipts</div>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-bold text-rose-500">(-) Cash Expenses</span>
+                <div className="text-lg font-black font-mono text-rose-500">
+                  -₾{currentRecon.cashExpenses.toFixed(2)}
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)]">Drawer cash paid out</div>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] uppercase font-bold text-amber-500">(-) Staff Advances</span>
+                <div className="text-lg font-black font-mono text-amber-500">
+                  -₾{currentRecon.barberAdvances.toFixed(2)}
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)]">Barber midday draws</div>
+              </div>
+
+              <div className="space-y-1 p-2 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30">
+                <span className="text-[10px] uppercase font-black text-[#D4AF37]">(=) Expected Cash</span>
+                <div className="text-xl font-black font-mono text-[#D4AF37]">
+                  ₾{currentRecon.expectedCash.toFixed(2)}
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)] font-bold">Should be in drawer</div>
+              </div>
+
+            </div>
+
+            {/* Expected vs Counted Comparison Banner */}
+            {(() => {
+              const counted = currentRecon.countedCash ?? currentRecon.expectedCash;
+              const reconVariance = currentRecon.variance ?? 0;
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  
+                  <div className="p-4 rounded-xl border bg-[var(--bg-card)] border-[var(--border-subtle)] flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Counted Physical Cash</span>
+                      <div className="text-2xl font-black font-mono text-[var(--text-main)] mt-0.5">
+                        ₾{counted.toFixed(2)} GEL
+                      </div>
+                      <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                        Last counted at {currentRecon.closedAt ? new Date(currentRecon.closedAt).toLocaleTimeString() : 'In Progress'}
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500">
+                      <Banknote className="w-6 h-6" />
+                    </div>
+                  </div>
+
+                  <div className={`p-4 rounded-xl border flex items-center justify-between ${
+                    reconVariance === 0
+                      ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                      : reconVariance > 0
+                      ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                      : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
+                  }`}>
+                    <div>
+                      <span className="text-[10px] uppercase font-bold opacity-80">
+                        Reconciliation Variance Result
+                      </span>
+                      <div className="text-2xl font-black font-mono mt-0.5">
+                        {reconVariance === 0 && '₾0.00 Exact Match'}
+                        {reconVariance > 0 && `+₾${reconVariance.toFixed(2)} Overage`}
+                        {reconVariance < 0 && `-₾${Math.abs(reconVariance).toFixed(2)} Shortage Alert`}
+                      </div>
+                      <div className="text-[11px] opacity-90 mt-0.5">
+                        {reconVariance === 0 
+                          ? 'Zero discrepancies detected. Drawer is perfectly balanced.'
+                          : reconVariance > 0
+                          ? 'Drawer contains excess cash over logged sales.'
+                          : 'Physical drawer cash is below expected sales. Please audit receipts.'}
+                      </div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-white/10">
+                      {reconVariance === 0 ? <ShieldCheck className="w-6 h-6" /> : <AlertTriangle className="w-6 h-6" />}
+                    </div>
+                  </div>
+
+                </div>
+              );
+            })()}
+
+            {currentRecon.notes && (
+              <div className="p-3 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-xs text-[var(--text-muted)]">
+                <span className="font-bold text-[var(--text-main)]">Closing Audit Notes: </span>
+                {currentRecon.notes}
+              </div>
+            )}
+          </div>
+
+        </div>
+      )}
+
+      {/* TAB 3: CATEGORIZED EXPENSES LEDGER */}
       {activeTab === 'expenses' && (
         <div className="card-executive p-5 overflow-hidden space-y-3">
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
@@ -407,7 +735,7 @@ export const FinanceView: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 3: BARBER PAYMENT SETTLEMENT TABLE */}
+      {/* TAB 4: BARBER PAYMENT SETTLEMENT TABLE */}
       {activeTab === 'barber-payments' && (
         <div className="card-executive p-5 overflow-hidden space-y-3">
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
@@ -636,6 +964,116 @@ export const FinanceView: React.FC = () => {
                 </button>
                 <button type="submit" className="btn-primary-gold">
                   Disburse Cash
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 3: END OF DAY CASH DRAWER RECONCILIATION */}
+      {showCloseModal && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl space-y-4 animate-scale-in max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-500">
+                  <Scale className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-[var(--text-main)]">
+                    End-of-Day Cash Close — {activeBranchName}
+                  </h3>
+                  <p className="text-[11px] text-[var(--text-muted)]">
+                    Verify cash drawer balance and audit variance
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowCloseModal(false)}
+                className="p-1 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleReconcileSubmit} className="space-y-4 text-xs">
+              
+              {/* Drawer Math Review */}
+              <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-[var(--text-dim)]">System Calculated Expected Cash:</span>
+                  <span className="font-mono font-bold text-base text-[#D4AF37]">
+                    ₾{cashInDrawer.toFixed(2)} GEL
+                  </span>
+                </div>
+                <div className="text-[10px] text-[var(--text-muted)]">
+                  Based on opening float + cash collections − cash expenses − staff advances.
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">
+                  Physical Counted Cash in Drawer (GEL) *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-[var(--text-dim)]">₾</span>
+                  <input
+                    type="number"
+                    step="0.5"
+                    required
+                    placeholder="575.00"
+                    value={physicalCashCount}
+                    onChange={(e) => setPhysicalCashCount(e.target.value)}
+                    className="w-full pl-8 font-mono font-bold text-base"
+                  />
+                </div>
+              </div>
+
+              {/* Dynamic Live Variance Display */}
+              {physicalCashCount && !isNaN(parseFloat(physicalCashCount)) && (
+                <div className={`p-3 rounded-xl border flex items-center justify-between ${
+                  parseFloat(physicalCashCount) - cashInDrawer === 0
+                    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'
+                    : parseFloat(physicalCashCount) - cashInDrawer > 0
+                    ? 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                    : 'bg-rose-500/10 border-rose-500/30 text-rose-500'
+                }`}>
+                  <div className="flex items-center gap-2">
+                    {parseFloat(physicalCashCount) - cashInDrawer === 0 ? (
+                      <CheckCircle2 className="w-4 h-4" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4" />
+                    )}
+                    <span className="font-bold">
+                      {parseFloat(physicalCashCount) - cashInDrawer === 0 && 'Variance: ₾0.00 Exact Match'}
+                      {parseFloat(physicalCashCount) - cashInDrawer > 0 && `Variance: +₾${(parseFloat(physicalCashCount) - cashInDrawer).toFixed(2)} Overage`}
+                      {parseFloat(physicalCashCount) - cashInDrawer < 0 && `Variance: -₾${Math.abs(parseFloat(physicalCashCount) - cashInDrawer).toFixed(2)} Shortage Alert`}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">
+                  Reconciliation Notes & Sign-off (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="e.g. Counted by manager, all physical receipts matched."
+                  value={reconciliationNotes}
+                  onChange={(e) => setReconciliationNotes(e.target.value)}
+                  className="w-full resize-none"
+                />
+              </div>
+
+              <div className="pt-2 flex justify-end gap-2 border-t border-[var(--border-subtle)]">
+                <button type="button" onClick={() => setShowCloseModal(false)} className="btn-secondary">
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary-gold flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Lock & Complete Close</span>
                 </button>
               </div>
             </form>

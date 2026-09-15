@@ -14,7 +14,9 @@ import {
   BookingSource,
   AuthUser,
   AdminUser,
-  BarberUser
+  BarberUser,
+  DailyCloseStatus,
+  DailyBranchReconciliation
 } from '../types';
 import { 
   DEFAULT_ADMIN,
@@ -136,6 +138,15 @@ interface CashContextType {
   ) => void;
   addWithdrawal: (barberId: string, amount: number, reason: string) => void;
   updateBarberCommission: (barberId: string, newRate: number, workingHours?: number) => void;
+
+  // Daily Close & Cash Reconciliation
+  reconciliations: Record<BranchId, DailyBranchReconciliation>;
+  performDailyClose: (branchId: BranchId, countedCash: number, notes?: string) => void;
+  updateReconciliationStatus: (branchId: BranchId, status: DailyCloseStatus) => void;
+
+  // Commission Pricing Base Rule ('discounted' actual paid vs 'list_price' full gross)
+  commissionBaseRule: 'discounted' | 'list_price';
+  setCommissionBaseRule: (rule: 'discounted' | 'list_price') => void;
   
   // Theme (Light / Dark)
   theme: 'dark' | 'light';
@@ -897,6 +908,96 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  // Commission Base Rule ('discounted' actual paid vs 'list_price' full gross)
+  const [commissionBaseRule, setCommissionBaseRule] = useState<'discounted' | 'list_price'>(() => {
+    const saved = localStorage.getItem('bb_commission_base_rule');
+    return saved === 'list_price' ? 'list_price' : 'discounted';
+  });
+
+  const handleSetCommissionBaseRule = (rule: 'discounted' | 'list_price') => {
+    setCommissionBaseRule(rule);
+    localStorage.setItem('bb_commission_base_rule', rule);
+  };
+
+  // Daily Cash Reconciliation & Close per branch
+  const [reconciliationOverrides, setReconciliationOverrides] = useState<Record<string, Partial<DailyBranchReconciliation>>>(() => {
+    const saved = localStorage.getItem('bb_reconciliations');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const reconciliations: Record<BranchId, DailyBranchReconciliation> = useMemo(() => {
+    const map: Record<BranchId, DailyBranchReconciliation> = {} as any;
+    branches.forEach((branch) => {
+      const bBookings = bookings.filter((b) => b.branchId === branch.id && isCompletedStatus(b.status));
+      const bCashSales = bBookings.filter((b) => b.paymentMethod === 'cash').reduce((sum, b) => sum + b.price, 0);
+      const bCardSales = bBookings.filter((b) => b.paymentMethod === 'card').reduce((sum, b) => sum + b.price, 0);
+      const bExpenses = expenses.filter((e) => e.branchId === branch.id).reduce((sum, e) => sum + e.amount, 0);
+      const bAdvances = withdrawals.filter((w) => w.branchId === branch.id).reduce((sum, w) => sum + w.amount, 0);
+      
+      const expectedCash = branch.initialCashDrawer + bCashSales - bExpenses - bAdvances;
+      const override = reconciliationOverrides[branch.id] || {};
+      const status: DailyCloseStatus = override.status || 'open';
+      const countedCash = override.countedCash;
+      const variance = countedCash !== undefined ? countedCash - expectedCash : undefined;
+
+      map[branch.id] = {
+        id: `rec-${branch.id}-2026-09-15`,
+        branchId: branch.id,
+        date: '2026-09-15',
+        status,
+        openingFloat: branch.initialCashDrawer,
+        cashSales: bCashSales,
+        cardSales: bCardSales,
+        cashExpenses: bExpenses,
+        barberAdvances: bAdvances,
+        expectedCash,
+        countedCash,
+        variance,
+        closedBy: override.closedBy,
+        closedAt: override.closedAt,
+        notes: override.notes,
+      };
+    });
+    return map;
+  }, [branches, bookings, expenses, withdrawals, reconciliationOverrides]);
+
+  const performDailyClose = (branchId: BranchId, countedCash: number, notes?: string) => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const rec = reconciliations[branchId];
+    const variance = countedCash - (rec?.expectedCash || 0);
+
+    setReconciliationOverrides((prev) => {
+      const updated = {
+        ...prev,
+        [branchId]: {
+          status: 'closed' as DailyCloseStatus,
+          countedCash,
+          variance,
+          closedBy: currentUser?.name || 'Admin',
+          closedAt: `Today, ${timeStr}`,
+          notes: notes?.trim() || (variance === 0 ? 'Exact balance verified' : `Variance: ₾${variance.toFixed(2)}`),
+        },
+      };
+      localStorage.setItem('bb_reconciliations', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const updateReconciliationStatus = (branchId: BranchId, status: DailyCloseStatus) => {
+    setReconciliationOverrides((prev) => {
+      const updated = {
+        ...prev,
+        [branchId]: {
+          ...(prev[branchId] || {}),
+          status,
+        },
+      };
+      localStorage.setItem('bb_reconciliations', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
     <CashContext.Provider
       value={{
@@ -953,6 +1054,11 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
         theme,
         toggleTheme,
         resetToDefaultData,
+        reconciliations,
+        performDailyClose,
+        updateReconciliationStatus,
+        commissionBaseRule,
+        setCommissionBaseRule: handleSetCommissionBaseRule,
       }}
     >
       {children}

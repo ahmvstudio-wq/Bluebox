@@ -135,6 +135,29 @@ export interface RevenueRecord {
 }
 
 // ==========================================
+// DAILY CLOSE & CASH RECONCILIATION TYPES
+// ==========================================
+export type DailyCloseStatus = 'open' | 'counted' | 'reviewed' | 'closed';
+
+export interface DailyBranchReconciliation {
+  id: string;
+  branchId: BranchId;
+  date: string; // e.g. "2026-09-15"
+  status: DailyCloseStatus;
+  openingFloat: number;
+  cashSales: number;
+  cardSales: number;
+  cashExpenses: number;
+  barberAdvances: number;
+  expectedCash: number;
+  countedCash?: number;
+  variance?: number; // counted - expected (0 = exact match, < 0 shortage, > 0 overage)
+  closedBy?: string;
+  closedAt?: string;
+  notes?: string;
+}
+
+// ==========================================
 // RBAC & AUTH TYPES
 // ==========================================
 export type UserRole = 'admin' | 'barber';
