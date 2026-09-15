@@ -64,10 +64,10 @@ export const LoginView: React.FC = () => {
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-main)] tracking-tight">
-            Select Your Role to Enter Demo
+            Select Your Role to Sign In
           </h1>
           <p className="text-xs sm:text-sm text-[var(--text-muted)] max-w-lg mx-auto">
-            Experience the dual-role architecture: The owner sees the whole business; each barber gets a strictly private personal dashboard.
+            Dual-role workspace architecture: Management accesses branch-wide financial operations; barbers access their dedicated chair workstation.
           </p>
         </div>
 
@@ -192,7 +192,7 @@ export const LoginView: React.FC = () => {
                 onClick={() => loginAsBarber(selectedBarberId)}
                 className="w-full py-3 px-4 rounded-xl btn-primary-gold text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all group"
               >
-                <span>Login as {selectedBarber?.name.split(' ')[0]}</span>
+                <span>Login as {selectedBarber?.name}</span>
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>

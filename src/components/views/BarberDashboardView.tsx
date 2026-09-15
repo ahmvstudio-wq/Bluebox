@@ -13,11 +13,16 @@ import {
   History, 
   ShieldCheck, 
   LogOut, 
-  Sparkles,
   Footprints,
   Calendar,
   AlertCircle,
-  X
+  X,
+  User,
+  Eye,
+  EyeOff,
+  Lock,
+  Building2,
+  MapPin
 } from 'lucide-react';
 
 const TIME_SLOTS = [
@@ -29,6 +34,7 @@ export const BarberDashboardView: React.FC = () => {
   const { 
     currentBarber, 
     services, 
+    branches,
     logout,
     loginAsAdmin,
     myAppointments, 
@@ -45,7 +51,8 @@ export const BarberDashboardView: React.FC = () => {
     createBooking
   } = useCash();
 
-  const [activeTab, setActiveTab] = useState<'appointments' | 'history' | 'withdrawals'>('appointments');
+  const [activeTab, setActiveTab] = useState<'appointments' | 'history' | 'withdrawals' | 'profile'>('appointments');
+  const [showPin, setShowPin] = useState(false);
 
   // Modal States for Barber to Create New Entries
   const [isWalkInModalOpen, setIsWalkInModalOpen] = useState(false);
@@ -93,6 +100,7 @@ export const BarberDashboardView: React.FC = () => {
   // Filter appointments
   const upcomingAppointments = myAppointments.filter((a) => a.status !== 'completed');
   const completedHistory = myAppointments.filter((a) => a.status === 'completed');
+  const assignedBranch = branches.find((b) => b.id === currentBarber.branchId);
 
   // 1. Handle Barber Adding a Walk-In Customer
   const handleWalkInSubmit = (e: React.FormEvent) => {
@@ -107,7 +115,7 @@ export const BarberDashboardView: React.FC = () => {
       paymentMethod: walkInPaymentMethod,
     });
 
-    const earned = selectedWalkInService.price * currentBarber.commissionRate;
+    const earned = selectedWalkInService?.price ? selectedWalkInService.price * currentBarber.commissionRate : 0;
     setToastMessage(`✓ Walk-in completed for ${walkInName.trim()}! +₾${earned.toFixed(2)} GEL added to your earnings.`);
     setWalkInName('');
     setWalkInPhone('');
@@ -122,7 +130,13 @@ export const BarberDashboardView: React.FC = () => {
     setBookingError(null);
 
     if (!bookingName.trim()) {
-      setBookingError('Please enter the customer name.');
+      setBookingError('Please enter client name');
+      return;
+    }
+
+    const isAvailable = slotAvailability[bookingTime];
+    if (!isAvailable) {
+      setBookingError(`Slot ${bookingTime} is already occupied. Please select an open chair slot.`);
       return;
     }
 
@@ -135,9 +149,9 @@ export const BarberDashboardView: React.FC = () => {
     });
 
     if (!result.success) {
-      setBookingError(result.error || 'This slot is already booked.');
+      setBookingError(result.error || 'Unable to reserve this slot. Please select another time.');
     } else {
-      setToastMessage(`✓ Appointment booked for ${bookingName.trim()} at ${bookingTime}!`);
+      setToastMessage(`✓ Chair reserved for ${bookingName.trim()} at ${bookingTime}.`);
       setBookingName('');
       setBookingPhone('');
       setIsBookingModalOpen(false);
@@ -150,31 +164,55 @@ export const BarberDashboardView: React.FC = () => {
       
       {/* Barber Personal Welcome Banner with Action Buttons */}
       <div className="card-executive p-5 bg-[var(--bg-card)] border-[var(--border-subtle)] flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <img
-            src={currentBarber.avatar}
-            alt={currentBarber.name}
-            className="w-14 h-14 rounded-2xl object-cover border-2 border-[#D4AF37] shadow-md shrink-0"
-          />
+        <div 
+          onClick={() => setActiveTab('profile')}
+          className="flex items-center gap-4 cursor-pointer group"
+          title="Click to inspect your Master Stylist profile & station contract"
+        >
+          <div className="relative">
+            <img
+              src={currentBarber.avatar}
+              alt={currentBarber.name}
+              className="w-14 h-14 rounded-2xl object-cover border-2 border-[#D4AF37] shadow-md shrink-0 group-hover:scale-105 transition-transform"
+            />
+            <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-[var(--bg-card)] flex items-center justify-center">
+              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            </span>
+          </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-lg font-black text-[var(--text-main)]">{currentBarber.name}</h2>
+              <h2 className="text-lg font-black text-[var(--text-main)] group-hover:text-[#D4AF37] transition-colors">
+                {currentBarber.name}
+              </h2>
               <span className="badge-status badge-gold">
                 50% Commission
               </span>
             </div>
             <p className="text-xs text-[var(--text-muted)] mt-0.5">
-              {currentBarber.specialty} • Branch: <span className="text-[var(--text-main)] font-semibold uppercase">{currentBarber.branchId}</span>
+              {currentBarber.specialty} • Branch: <span className="text-[var(--text-main)] font-semibold uppercase">{assignedBranch?.name || currentBarber.branchId}</span>
             </p>
-            <div className="flex items-center gap-1 text-[10px] text-emerald-500 dark:text-emerald-400 font-semibold mt-1">
-              <ShieldCheck className="w-3 h-3" />
-              <span>Private Chair View • Restricted to Your Own Records</span>
+            <div className="flex items-center gap-1.5 text-[10px] text-emerald-500 dark:text-emerald-400 font-semibold mt-1">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Private Chair View • Click to view full Profile & Contract</span>
             </div>
           </div>
         </div>
 
         {/* Action Controls: New Entry Buttons + Demo Switch */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* View Profile Button */}
+          <button
+            onClick={() => setActiveTab('profile')}
+            className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
+              activeTab === 'profile'
+                ? 'bg-[#D4AF37] text-black border-[#D4AF37]'
+                : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border-[var(--border-subtle)]'
+            }`}
+          >
+            <User className="w-3.5 h-3.5" />
+            <span>My Profile</span>
+          </button>
+
           {/* 1. Walk-in Button */}
           <button
             onClick={() => setIsWalkInModalOpen(true)}
@@ -193,11 +231,11 @@ export const BarberDashboardView: React.FC = () => {
             <span>+ Book My Chair</span>
           </button>
 
-          {/* Switch to Admin for Demo */}
+          {/* Switch to Management View */}
           <button
             onClick={loginAsAdmin}
             className="btn-secondary text-xs py-2 px-3 flex items-center gap-1.5"
-            title="Switch to Admin view for demo"
+            title="Switch to Management View"
           >
             <ShieldCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
             <span className="hidden sm:inline">Admin View</span>
@@ -297,10 +335,10 @@ export const BarberDashboardView: React.FC = () => {
       </div>
 
       {/* Navigation Tabs for Barber's Workspace */}
-      <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] pb-2">
+      <div className="flex items-center gap-2 border-b border-[var(--border-subtle)] pb-2 overflow-x-auto">
         <button
           onClick={() => setActiveTab('appointments')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
             activeTab === 'appointments'
               ? 'bg-[#18181B] text-white dark:bg-[#27272A] border border-[var(--border-card)] shadow-sm'
               : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-subtle)]'
@@ -312,7 +350,7 @@ export const BarberDashboardView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('history')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
             activeTab === 'history'
               ? 'bg-[#18181B] text-white dark:bg-[#27272A] border border-[var(--border-card)] shadow-sm'
               : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-subtle)]'
@@ -324,7 +362,7 @@ export const BarberDashboardView: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('withdrawals')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
             activeTab === 'withdrawals'
               ? 'bg-[#18181B] text-white dark:bg-[#27272A] border border-[var(--border-card)] shadow-sm'
               : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-subtle)]'
@@ -332,6 +370,18 @@ export const BarberDashboardView: React.FC = () => {
         >
           <ArrowDownRight className="w-4 h-4 text-amber-500" />
           <span>My Cash Advances ({myWithdrawals.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('profile')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 ${
+            activeTab === 'profile'
+              ? 'bg-[#18181B] text-white dark:bg-[#27272A] border border-[var(--border-card)] shadow-sm'
+              : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-subtle)]'
+          }`}
+        >
+          <User className="w-4 h-4 text-[#D4AF37]" />
+          <span>My Profile & Station</span>
         </button>
       </div>
 
@@ -541,6 +591,172 @@ export const BarberDashboardView: React.FC = () => {
         </div>
       )}
 
+      {/* TAB 4: My Profile & Station Dossier */}
+      {activeTab === 'profile' && (
+        <div className="space-y-6">
+          {/* Top Profile Card */}
+          <div className="card-executive p-6 space-y-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-6 border-b border-[var(--border-subtle)]">
+              <div className="flex items-center gap-5">
+                <div className="relative">
+                  <img
+                    src={currentBarber.avatar}
+                    alt={currentBarber.name}
+                    className="w-20 h-20 rounded-2xl object-cover border-2 border-[#D4AF37] shadow-xl"
+                  />
+                  <span className="absolute -bottom-1 -right-1 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow">
+                    Active
+                  </span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h2 className="text-xl font-black text-[var(--text-main)]">{currentBarber.name}</h2>
+                    <span className="badge-status badge-gold">
+                      Master Stylist
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#D4AF37] font-semibold mt-1">
+                    {currentBarber.specialty}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--text-muted)] mt-2">
+                    <span className="flex items-center gap-1">
+                      <Building2 className="w-3.5 h-3.5 text-[var(--text-dim)]" />
+                      {assignedBranch?.name || currentBarber.branchId}
+                    </span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1">
+                      <MapPin className="w-3.5 h-3.5 text-[var(--text-dim)]" />
+                      {assignedBranch?.address || 'Tbilisi, Georgia'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Station Security PIN Quick Access */}
+              <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-2 min-w-[220px]">
+                <div className="flex items-center justify-between text-[11px] font-bold text-[var(--text-muted)] uppercase tracking-wider">
+                  <span className="flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    POS Station PIN
+                  </span>
+                  <button
+                    onClick={() => setShowPin(!showPin)}
+                    className="text-[var(--text-dim)] hover:text-[var(--text-main)] transition-colors p-1"
+                    title={showPin ? 'Hide PIN' : 'Reveal PIN'}
+                  >
+                    {showPin ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+                <div className="text-lg font-black font-mono tracking-widest text-[var(--text-main)]">
+                  {showPin ? (currentBarber.pin || '1234') : '••••'}
+                </div>
+                <p className="text-[10px] text-[var(--text-dim)]">
+                  Use this 4-digit code to log into the shop floor terminal.
+                </p>
+              </div>
+            </div>
+
+            {/* Compensation & Contract Structure */}
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] mb-3">
+                Contract & Commission Model
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
+                  <div className="text-[11px] text-[var(--text-muted)] font-medium">Split Agreement</div>
+                  <div className="text-2xl font-black font-mono text-[#D4AF37] mt-1">
+                    {(currentBarber.commissionRate * 100).toFixed(0)}% / {((1 - currentBarber.commissionRate) * 100).toFixed(0)}%
+                  </div>
+                  <div className="text-[10px] text-[var(--text-dim)] mt-1">50% Net Ticket on all cuts</div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
+                  <div className="text-[11px] text-[var(--text-muted)] font-medium">Accumulated This Month</div>
+                  <div className="text-2xl font-black font-mono text-emerald-500 mt-1">
+                    ₾{myMonthEarnings.toFixed(2)}
+                  </div>
+                  <div className="text-[10px] text-[var(--text-dim)] mt-1">From {completedHistory.length} completed cuts</div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
+                  <div className="text-[11px] text-[var(--text-muted)] font-medium">Advances / Paid Out</div>
+                  <div className="text-2xl font-black font-mono text-amber-500 mt-1">
+                    ₾{myTotalWithdrawn.toFixed(2)}
+                  </div>
+                  <div className="text-[10px] text-[var(--text-dim)] mt-1">Across {myWithdrawals.length} cash disbursements</div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[#D4AF37]/40 bg-[#D4AF37]/5">
+                  <div className="text-[11px] text-[#D4AF37] font-bold">Outstanding Owed to You</div>
+                  <div className="text-2xl font-black font-mono text-[#D4AF37] mt-1">
+                    ₾{myRemainingBalance.toFixed(2)}
+                  </div>
+                  <div className="text-[10px] text-[var(--text-dim)] mt-1">Payable upon end of cycle</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Service Rates & Personal Cut Catalog */}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
+                  Station Service Menu & Guaranteed Cut
+                </h3>
+                <span className="text-[10px] text-[var(--text-dim)] font-mono">50% Cut per Service</span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {services.map((svc) => {
+                  const barberCut = svc.price !== null ? svc.price * currentBarber.commissionRate : null;
+                  return (
+                    <div
+                      key={svc.id}
+                      className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between hover:border-[var(--border-card)] transition-colors"
+                    >
+                      <div>
+                        <div className="font-bold text-xs text-[var(--text-main)]">{svc.name}</div>
+                        <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                          Duration: {svc.duration} mins • Customer price:{' '}
+                          <span className="font-semibold text-[var(--text-main)]">
+                            {svc.price !== null ? `₾${svc.price} GEL` : 'Price TBD'}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="text-right">
+                        <span className="text-[10px] uppercase font-bold text-emerald-500 block">Your Payout</span>
+                        <span className="text-base font-black font-mono text-emerald-500 dark:text-emerald-400">
+                          {barberCut !== null ? `+₾${barberCut.toFixed(2)}` : '50% of TBD'}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Station Schedule & Policies */}
+            <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div>
+                <div className="text-[10px] font-bold uppercase text-[var(--text-dim)]">Assigned Station</div>
+                <div className="font-bold text-[var(--text-main)] mt-1">Chair 01 • Premium Station</div>
+                <div className="text-[11px] text-[var(--text-muted)] mt-0.5">Equipped with Wahl cordless clippers</div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold uppercase text-[var(--text-dim)]">Shift Hours</div>
+                <div className="font-bold text-[var(--text-main)] mt-1">10:00 AM – 8:00 PM</div>
+                <div className="text-[11px] text-[var(--text-muted)] mt-0.5">Monday to Saturday (6 days)</div>
+              </div>
+              <div>
+                <div className="text-[10px] font-bold uppercase text-[var(--text-dim)]">Manager on Duty</div>
+                <div className="font-bold text-[var(--text-main)] mt-1">Admin / Store Owner</div>
+                <div className="text-[11px] text-[var(--text-muted)] mt-0.5">For immediate cash advance or disputes</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ========================================================================= */}
       {/* 1. MODAL: BARBER LOGGING A WALK-IN CLIENT (FAST CHAIR-SIDE CHECKOUT) */}
       {/* ========================================================================= */}
@@ -615,7 +831,7 @@ export const BarberDashboardView: React.FC = () => {
                           <div className="text-[10px] text-[var(--text-dim)]">{s.duration} mins</div>
                         </div>
                         <span className="font-mono font-bold text-sm text-[#D4AF37] shrink-0">
-                          ₾{s.price}
+                          {s.price !== null ? `₾${s.price}` : 'TBD'}
                         </span>
                       </div>
                     );
@@ -661,12 +877,14 @@ export const BarberDashboardView: React.FC = () => {
               <div className="p-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between">
                 <div>
                   <span className="text-[10px] uppercase text-[var(--text-dim)] block font-bold">Ticket Total</span>
-                  <span className="text-base font-black text-[var(--text-main)] font-mono">₾{selectedWalkInService.price} GEL</span>
+                  <span className="text-base font-black text-[var(--text-main)] font-mono">
+                    {selectedWalkInService.price !== null ? `₾${selectedWalkInService.price} GEL` : 'Price TBD'}
+                  </span>
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] uppercase text-[var(--text-dim)] block font-bold">Your 50% Share</span>
                   <span className="text-base font-black text-emerald-500 dark:text-emerald-400 font-mono">
-                    +₾{(selectedWalkInService.price * 0.5).toFixed(2)} GEL
+                    {selectedWalkInService.price !== null ? `+₾${(selectedWalkInService.price * 0.5).toFixed(2)} GEL` : '50% of TBD'}
                   </span>
                 </div>
               </div>
@@ -761,7 +979,7 @@ export const BarberDashboardView: React.FC = () => {
                 >
                   {services.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} — ₾{s.price} GEL ({s.duration} min)
+                      {s.name} — {s.price !== null ? `₾${s.price} GEL` : 'Price TBD'} ({s.duration} min)
                     </option>
                   ))}
                 </select>

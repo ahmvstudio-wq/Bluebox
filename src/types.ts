@@ -11,7 +11,7 @@ export interface Branch {
 
 export interface Barber {
   id: string;
-  name: string;
+  name: string; // e.g. "Barber #1"
   branchId: BranchId;
   specialty: string;
   avatar: string;
@@ -24,9 +24,29 @@ export interface Barber {
 export interface ServiceItem {
   id: string;
   name: string;
-  price: number; // GEL
+  price: number | null; // GEL (null for TBD)
   duration: number; // minutes
+  isTbd?: boolean;
 }
+
+export type BookingSource = 
+  | 'Phone' 
+  | 'Instagram' 
+  | 'WhatsApp' 
+  | 'Walk-in' 
+  | 'Direct Barber Booking';
+
+export type BookingStatus = 
+  | 'Scheduled' 
+  | 'Arrived' 
+  | 'In Service' 
+  | 'Completed' 
+  | 'Cancelled' 
+  | 'No-show' 
+  | 'Rescheduled'
+  | 'scheduled'
+  | 'arrived'
+  | 'completed';
 
 export interface BookingAppointment {
   id: string;
@@ -34,22 +54,33 @@ export interface BookingAppointment {
   branchId: BranchId;
   customerName: string;
   customerPhone: string;
+  isStudent?: boolean;
+  studentIdProof?: string;
+  allergies?: string;
   barberId: string;
   barberName: string;
   serviceId: string;
   serviceName: string;
-  price: number; // GEL
+  originalPrice: number | null; // GEL (null if TBD)
+  discountPercent?: number; // 20% if student
+  discountAmount: number; // e.g. 9 GEL
+  price: number; // Net price after discount (0 if TBD)
   time: string; // e.g. "14:00"
+  source: BookingSource;
   type: 'booking' | 'walk-in';
-  status: 'scheduled' | 'arrived' | 'completed';
+  status: BookingStatus;
   paymentMethod?: 'cash' | 'card';
   createdAt: string;
+  isNoShowGraceExpired?: boolean; // past 10-minute grace period
 }
 
 export interface Customer {
   id: string;
   name: string;
   phone: string;
+  isStudent: boolean; // Yes / No
+  studentIdProof?: string; // e.g. "STU-88219"
+  allergies: string; // e.g. "Sensitive skin / alcohol aftershave"
   totalVisits: number;
   totalSpent: number;
   lastVisit: string;
@@ -59,16 +90,25 @@ export interface Customer {
     serviceName: string;
     barberName: string;
     amount: number;
+    paymentMethod?: 'cash' | 'card';
     type: 'booking' | 'walk-in';
   }[];
 }
 
+export type ExpenseCategory = 
+  | 'Business' 
+  | 'Barber/worker' 
+  | 'Customer-related' 
+  | 'Operational';
+
 export interface Expense {
   id: string;
   branchId: BranchId;
+  category: ExpenseCategory;
   title: string;
   amount: number;
   date: string;
+  description?: string;
 }
 
 export interface BarberWithdrawal {
@@ -79,6 +119,19 @@ export interface BarberWithdrawal {
   amount: number;
   date: string;
   reason: string;
+}
+
+export interface RevenueRecord {
+  id: string;
+  ticketNumber: string;
+  serviceName: string;
+  customerName: string;
+  barberId: string;
+  barberName: string;
+  branchId: BranchId;
+  amount: number;
+  paymentMethod: 'cash' | 'card';
+  dateTime: string;
 }
 
 // ==========================================

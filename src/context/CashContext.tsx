@@ -7,7 +7,11 @@ import {
   BookingAppointment, 
   Customer, 
   Expense, 
+  ExpenseCategory,
   BarberWithdrawal,
+  RevenueRecord,
+  BookingStatus,
+  BookingSource,
   AuthUser,
   AdminUser,
   BarberUser
@@ -52,12 +56,14 @@ interface CashContextType {
   customers: Customer[];
   expenses: Expense[];
   withdrawals: BarberWithdrawal[];
+  revenueRecords: RevenueRecord[];
 
   // Filtered to active branch (Admin View)
   branchBarbers: Barber[];
   branchBookings: BookingAppointment[];
   branchExpenses: Expense[];
   branchWithdrawals: BarberWithdrawal[];
+  branchRevenueRecords: RevenueRecord[];
 
   // 1. Dashboard Metrics (Admin View)
   todayCustomers: number;
@@ -73,8 +79,9 @@ interface CashContextType {
   totalWithdrawals: number;
   netProfit: number;
   cashInDrawer: number;
+  expensesByCategory: Record<ExpenseCategory, number>;
 
-  // 2. Personal Barber Metrics (Barber RBAC View - Strictly limited to own data)
+  // 2. Personal Barber Metrics (Barber RBAC View)
   currentBarber: Barber | null;
   myAppointments: BookingAppointment[];
   myClientsToday: number;
@@ -92,10 +99,21 @@ interface CashContextType {
     barberId: string;
     serviceId: string;
     time: string;
+    source?: BookingSource;
+    isStudent?: boolean;
+    studentIdProof?: string;
+    allergies?: string;
   }) => { success: boolean; error?: string };
 
   markCustomerArrived: (bookingId: string) => void;
+  markCustomerInService: (bookingId: string) => void;
+  markNoShow: (bookingId: string) => void;
   completeService: (bookingId: string, paymentMethod: 'cash' | 'card') => void;
+  updateBookingStatus: (
+    bookingId: string,
+    status: BookingStatus,
+    paymentMethod?: 'cash' | 'card'
+  ) => void;
 
   addWalkIn: (data: {
     customerName: string;
@@ -103,10 +121,21 @@ interface CashContextType {
     barberId: string;
     serviceId: string;
     paymentMethod: 'cash' | 'card';
+    source?: BookingSource;
+    isStudent?: boolean;
+    studentIdProof?: string;
+    allergies?: string;
   }) => void;
 
-  addExpense: (title: string, amount: number) => void;
+  addExpense: (
+    title: string, 
+    amount: number, 
+    category?: ExpenseCategory, 
+    description?: string, 
+    branchId?: BranchId
+  ) => void;
   addWithdrawal: (barberId: string, amount: number, reason: string) => void;
+  
   // Theme (Light / Dark)
   theme: 'dark' | 'light';
   toggleTheme: () => void;
@@ -115,6 +144,15 @@ interface CashContextType {
 }
 
 const CashContext = createContext<CashContextType | undefined>(undefined);
+
+// Normalize status matching helper
+export const isCompletedStatus = (s: string) => s === 'Completed' || s === 'completed';
+export const isArrivedStatus = (s: string) => s === 'Arrived' || s === 'arrived';
+export const isInServiceStatus = (s: string) => s === 'In Service' || s === 'in_service';
+export const isScheduledStatus = (s: string) => s === 'Scheduled' || s === 'scheduled';
+export const isNoShowStatus = (s: string) => s === 'No-show' || s === 'no_show';
+export const isCancelledStatus = (s: string) => s === 'Cancelled' || s === 'cancelled';
+export const isRescheduledStatus = (s: string) => s === 'Rescheduled' || s === 'rescheduled';
 
 export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // Theme state with HTML root class management
@@ -139,10 +177,26 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
+  // Schema version management to seamlessly reload the new mock dataset
+  const DATA_VERSION = 'v4_numbered_barbers_dataset_proper';
+  useEffect(() => {
+    const storedVersion = localStorage.getItem('bb_data_version');
+    if (storedVersion !== DATA_VERSION) {
+      localStorage.setItem('bb_data_version', DATA_VERSION);
+      localStorage.removeItem('bb_barbers');
+      localStorage.removeItem('bb_services');
+      localStorage.removeItem('bb_bookings');
+      localStorage.removeItem('bb_customers');
+      localStorage.removeItem('bb_expenses');
+      localStorage.removeItem('bb_withdrawals');
+      localStorage.removeItem('bb_revenue_records');
+    }
+  }, []);
+
   // 1. Auth state with persistence
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     const saved = localStorage.getItem('bb_auth_user');
-    return saved ? JSON.parse(saved) : DEFAULT_ADMIN; // Default to admin for fast demo access
+    return saved ? JSON.parse(saved) : DEFAULT_ADMIN;
   });
 
   useEffect(() => {
@@ -187,6 +241,28 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return saved ? JSON.parse(saved) : INITIAL_WITHDRAWALS;
   });
 
+  // Revenue records generated from completed services
+  const [revenueRecords, setRevenueRecords] = useState<RevenueRecord[]>(() => {
+    const saved = localStorage.getItem('bb_revenue_records');
+    if (saved) return JSON.parse(saved);
+
+    // Populate initial completed appointments into revenue records
+    return INITIAL_BOOKINGS
+      .filter((b) => isCompletedStatus(b.status))
+      .map((b) => ({
+        id: 'rev-' + b.id,
+        ticketNumber: b.ticketNumber,
+        serviceName: b.serviceName,
+        customerName: b.customerName,
+        barberId: b.barberId,
+        barberName: b.barberName,
+        branchId: b.branchId,
+        amount: b.price,
+        paymentMethod: b.paymentMethod || 'cash',
+        dateTime: b.createdAt || 'Today',
+      }));
+  });
+
   useEffect(() => {
     localStorage.setItem('bb_barbers', JSON.stringify(barbers));
   }, [barbers]);
@@ -211,23 +287,44 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('bb_withdrawals', JSON.stringify(withdrawals));
   }, [withdrawals]);
 
-  // Reset to default demo data helper
+  useEffect(() => {
+    localStorage.setItem('bb_revenue_records', JSON.stringify(revenueRecords));
+  }, [revenueRecords]);
+
+  // Reset to default data helper
   const resetToDefaultData = () => {
-    localStorage.removeItem('bb_bookings');
-    localStorage.removeItem('bb_customers');
-    localStorage.removeItem('bb_expenses');
-    localStorage.removeItem('bb_withdrawals');
-    localStorage.removeItem('bb_barbers');
-    localStorage.removeItem('bb_services');
     setBarbers(INITIAL_BARBERS);
     setServices(INITIAL_SERVICES);
     setBookings(INITIAL_BOOKINGS);
     setCustomers(INITIAL_CUSTOMERS);
     setExpenses(INITIAL_EXPENSES);
     setWithdrawals(INITIAL_WITHDRAWALS);
+    setRevenueRecords(
+      INITIAL_BOOKINGS
+        .filter((b) => isCompletedStatus(b.status))
+        .map((b) => ({
+          id: 'rev-' + b.id,
+          ticketNumber: b.ticketNumber,
+          serviceName: b.serviceName,
+          customerName: b.customerName,
+          barberId: b.barberId,
+          barberName: b.barberName,
+          branchId: b.branchId,
+          amount: b.price,
+          paymentMethod: b.paymentMethod || 'cash',
+          dateTime: b.createdAt || 'Today',
+        }))
+    );
+    localStorage.removeItem('bb_barbers');
+    localStorage.removeItem('bb_services');
+    localStorage.removeItem('bb_bookings');
+    localStorage.removeItem('bb_customers');
+    localStorage.removeItem('bb_expenses');
+    localStorage.removeItem('bb_withdrawals');
+    localStorage.removeItem('bb_revenue_records');
   };
 
-  // Auth actions
+  // 3. RBAC Handlers
   const loginAsAdmin = () => {
     setCurrentUser(DEFAULT_ADMIN);
   };
@@ -245,7 +342,7 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
       specialty: barber.specialty,
     };
     setCurrentUser(barberUser);
-    setCurrentBranch(barber.branchId); // Automatically sync active branch to barber's location
+    setCurrentBranch(barber.branchId);
     return true;
   };
 
@@ -253,7 +350,7 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentUser(null);
   };
 
-  // Branch filtered collections
+  // 4. Branch Filtered Collections (Admin Mode)
   const branchBarbers = useMemo(() => {
     return barbers.filter((b) => b.branchId === currentBranch);
   }, [barbers, currentBranch]);
@@ -270,9 +367,13 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return withdrawals.filter((w) => w.branchId === currentBranch);
   }, [withdrawals, currentBranch]);
 
+  const branchRevenueRecords = useMemo(() => {
+    return revenueRecords.filter((r) => r.branchId === currentBranch);
+  }, [revenueRecords, currentBranch]);
+
   // Admin Dashboard Calculations
   const completedBookings = useMemo(() => {
-    return branchBookings.filter((b) => b.status === 'completed');
+    return branchBookings.filter((b) => isCompletedStatus(b.status));
   }, [branchBookings]);
 
   const todayCustomers = completedBookings.length;
@@ -336,6 +437,19 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return branchExpenses.reduce((sum, e) => sum + e.amount, 0);
   }, [branchExpenses]);
 
+  const expensesByCategory = useMemo(() => {
+    const map: Record<ExpenseCategory, number> = {
+      'Business': 0,
+      'Barber/worker': 0,
+      'Customer-related': 0,
+      'Operational': 0,
+    };
+    branchExpenses.forEach((e) => {
+      map[e.category] = (map[e.category] || 0) + e.amount;
+    });
+    return map;
+  }, [branchExpenses]);
+
   const totalWithdrawals = useMemo(() => {
     return branchWithdrawals.reduce((sum, w) => sum + w.amount, 0);
   }, [branchWithdrawals]);
@@ -344,52 +458,47 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return todayRevenue - totalExpenses;
   }, [todayRevenue, totalExpenses]);
 
+  const activeBranchObj = branches.find((b) => b.id === currentBranch) || branches[0];
   const cashInDrawer = useMemo(() => {
-    const initialFloat = branches.find((b) => b.id === currentBranch)?.initialCashDrawer || 250;
-    const cashSales = completedBookings.filter((b) => b.paymentMethod === 'cash').reduce((sum, b) => sum + b.price, 0);
-    return Math.max(0, initialFloat + cashSales - totalExpenses - totalWithdrawals);
-  }, [branches, currentBranch, completedBookings, totalExpenses, totalWithdrawals]);
+    const cashIncome = completedBookings
+      .filter((b) => b.paymentMethod === 'cash')
+      .reduce((sum, b) => sum + b.price, 0);
+    return activeBranchObj.initialCashDrawer + cashIncome - totalExpenses - totalWithdrawals;
+  }, [activeBranchObj, completedBookings, totalExpenses, totalWithdrawals]);
 
-  // ==========================================
-  // BARBER RBAC METRICS (STRICTLY ISOLATED)
-  // ==========================================
-  const currentBarberId = currentUser?.role === 'barber' ? currentUser.barberId : null;
-
+  // 5. Personal Barber Context (Barber RBAC Mode)
   const currentBarber = useMemo(() => {
-    if (!currentBarberId) return null;
-    return barbers.find((b) => b.id === currentBarberId) || null;
-  }, [barbers, currentBarberId]);
+    if (!currentUser || currentUser.role !== 'barber') return null;
+    return barbers.find((b) => b.id === currentUser.barberId) || null;
+  }, [currentUser, barbers]);
 
   const myAppointments = useMemo(() => {
-    if (!currentBarberId) return [];
-    return bookings.filter((b) => b.barberId === currentBarberId);
-  }, [bookings, currentBarberId]);
+    if (!currentBarber) return [];
+    return bookings.filter((b) => b.barberId === currentBarber.id);
+  }, [bookings, currentBarber]);
 
-  const myCompletedServices = useMemo(() => {
-    return myAppointments.filter((b) => b.status === 'completed');
+  const myCompletedAppointments = useMemo(() => {
+    return myAppointments.filter((b) => isCompletedStatus(b.status));
   }, [myAppointments]);
 
-  const myClientsToday = myCompletedServices.length;
-  const myServicesCompletedToday = myCompletedServices.length;
-
-  const myTodayRevenue = useMemo(() => {
-    return myCompletedServices.reduce((sum, b) => sum + b.price, 0);
-  }, [myCompletedServices]);
+  const myClientsToday = myCompletedAppointments.length;
+  const myServicesCompletedToday = myCompletedAppointments.length;
 
   const myTodayEarnings = useMemo(() => {
-    const rate = currentBarber?.commissionRate || 0.5;
-    return myTodayRevenue * rate;
-  }, [myTodayRevenue, currentBarber]);
+    if (!currentBarber) return 0;
+    const gross = myCompletedAppointments.reduce((sum, b) => sum + b.price, 0);
+    return gross * currentBarber.commissionRate;
+  }, [myCompletedAppointments, currentBarber]);
 
   const myMonthEarnings = useMemo(() => {
-    const base = currentBarber?.monthBaseEarnings || 0;
-    return base + myTodayEarnings;
+    if (!currentBarber) return 0;
+    return currentBarber.monthBaseEarnings + myTodayEarnings;
   }, [currentBarber, myTodayEarnings]);
 
   const myWithdrawals = useMemo(() => {
-    if (!currentBarberId) return [];
-    return withdrawals.filter((w) => w.barberId === currentBarberId);
-  }, [withdrawals, currentBarberId]);
+    if (!currentBarber) return [];
+    return withdrawals.filter((w) => w.barberId === currentBarber.id);
+  }, [withdrawals, currentBarber]);
 
   const myTotalWithdrawn = useMemo(() => {
     return myWithdrawals.reduce((sum, w) => sum + w.amount, 0);
@@ -400,7 +509,7 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [myMonthEarnings, myTotalWithdrawn]);
 
   // ==========================================
-  // ACTIONS (KILLER WORKFLOW & OPERATIONS)
+  // CORE OPERATIONS (APPOINTMENTS & REVENUE)
   // ==========================================
   const createBooking = (data: {
     customerName: string;
@@ -408,16 +517,20 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     barberId: string;
     serviceId: string;
     time: string;
+    source?: BookingSource;
+    isStudent?: boolean;
+    studentIdProof?: string;
+    allergies?: string;
   }) => {
     // Check double booking for that barber
     const conflict = bookings.find(
-      (b) => b.barberId === data.barberId && b.time === data.time && b.status !== 'completed'
+      (b) => b.barberId === data.barberId && b.time === data.time && !isCompletedStatus(b.status) && !isCancelledStatus(b.status)
     );
 
     if (conflict) {
       return {
         success: false,
-        error: `Slot ${data.time} is already booked for this barber with ${conflict.customerName}. Please choose another time.`,
+        error: `Slot ${data.time} is already booked for this barber with ${conflict.customerName}. Please select another time.`,
       };
     }
 
@@ -425,21 +538,36 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const service = services.find((s) => s.id === data.serviceId);
     if (!barber || !service) return { success: false, error: 'Invalid selection' };
 
+    // Student 20% discount calculation
+    const originalPrice = service.price;
+    const isStudent = !!data.isStudent;
+    const discountPercent = isStudent ? 20 : 0;
+    const discountAmount = isStudent && originalPrice ? originalPrice * 0.2 : 0;
+    const netPrice = originalPrice ? originalPrice - discountAmount : 0;
+
     const newBooking: BookingAppointment = {
       id: 'apt-' + Date.now(),
-      ticketNumber: 'BB-' + Math.floor(100 + Math.random() * 900),
+      ticketNumber: '#BB-' + Math.floor(100 + Math.random() * 900),
       branchId: barber.branchId,
       customerName: data.customerName.trim(),
       customerPhone: data.customerPhone.trim() || '+995 5xx xxx xxx',
+      isStudent,
+      studentIdProof: data.studentIdProof?.trim() || (isStudent ? 'Verified Student ID' : undefined),
+      allergies: data.allergies?.trim() || 'None',
       barberId: barber.id,
       barberName: barber.name,
       serviceId: service.id,
       serviceName: service.name,
-      price: service.price,
+      originalPrice,
+      discountPercent,
+      discountAmount,
+      price: netPrice,
       time: data.time,
+      source: data.source || 'Phone',
       type: 'booking',
-      status: 'scheduled',
-      createdAt: new Date().toISOString(),
+      status: 'Scheduled',
+      createdAt: 'Today, ' + new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Tbilisi', hour: '2-digit', minute: '2-digit', hour12: false }),
+      isNoShowGraceExpired: false,
     };
 
     setBookings((prev) => [newBooking, ...prev]);
@@ -447,12 +575,21 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Upsert customer in directory
     setCustomers((prev) => {
       const found = prev.find((c) => c.name.toLowerCase() === data.customerName.trim().toLowerCase());
-      if (found) return prev;
+      if (found) {
+        return prev.map((c) => 
+          c.id === found.id 
+            ? { ...c, isStudent: isStudent || c.isStudent, allergies: data.allergies || c.allergies } 
+            : c
+        );
+      }
       return [
         {
           id: 'c-' + Date.now(),
           name: data.customerName.trim(),
           phone: data.customerPhone.trim() || '+995 5xx xxx xxx',
+          isStudent,
+          studentIdProof: data.studentIdProof?.trim(),
+          allergies: data.allergies?.trim() || 'None',
           totalVisits: 0,
           totalSpent: 0,
           lastVisit: 'Pending Appointment',
@@ -468,7 +605,19 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const markCustomerArrived = (bookingId: string) => {
     setBookings((prev) =>
-      prev.map((b) => (b.id === bookingId ? { ...b, status: 'arrived' } : b))
+      prev.map((b) => (b.id === bookingId ? { ...b, status: 'Arrived' } : b))
+    );
+  };
+
+  const markCustomerInService = (bookingId: string) => {
+    setBookings((prev) =>
+      prev.map((b) => (b.id === bookingId ? { ...b, status: 'In Service' } : b))
+    );
+  };
+
+  const markNoShow = (bookingId: string) => {
+    setBookings((prev) =>
+      prev.map((b) => (b.id === bookingId ? { ...b, status: 'No-show', isNoShowGraceExpired: true } : b))
     );
   };
 
@@ -476,14 +625,31 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const booking = bookings.find((b) => b.id === bookingId);
     if (!booking) return;
 
+    // 1. Update booking status
     setBookings((prev) =>
       prev.map((b) =>
         b.id === bookingId
-          ? { ...b, status: 'completed', paymentMethod }
+          ? { ...b, status: 'Completed', paymentMethod }
           : b
       )
     );
 
+    // 2. Record Revenue Entry
+    const newRevRecord: RevenueRecord = {
+      id: 'rev-' + Date.now(),
+      ticketNumber: booking.ticketNumber,
+      serviceName: booking.serviceName,
+      customerName: booking.customerName,
+      barberId: booking.barberId,
+      barberName: booking.barberName,
+      branchId: booking.branchId,
+      amount: booking.price,
+      paymentMethod,
+      dateTime: 'Today, ' + new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Tbilisi', hour: '2-digit', minute: '2-digit', hour12: false }),
+    };
+    setRevenueRecords((prev) => [newRevRecord, ...prev]);
+
+    // 3. Update customer directory visit record
     setCustomers((prev) => {
       return prev.map((c) => {
         if (c.name.toLowerCase() === booking.customerName.toLowerCase()) {
@@ -496,9 +662,10 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
             history: [
               {
                 date: 'Today',
-                serviceName: booking.serviceName,
+                serviceName: booking.serviceName + (booking.isStudent ? ' (Student 20% Off)' : ''),
                 barberName: booking.barberName,
                 amount: booking.price,
+                paymentMethod,
                 type: booking.type,
               },
               ...c.history,
@@ -510,39 +677,108 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  const updateBookingStatus = (
+    bookingId: string,
+    status: BookingStatus,
+    paymentMethod: 'cash' | 'card' = 'cash'
+  ) => {
+    if (isCompletedStatus(status)) {
+      completeService(bookingId, paymentMethod);
+      return;
+    }
+
+    if (isArrivedStatus(status)) {
+      markCustomerArrived(bookingId);
+      return;
+    }
+
+    if (isInServiceStatus(status)) {
+      markCustomerInService(bookingId);
+      return;
+    }
+
+    if (isNoShowStatus(status)) {
+      markNoShow(bookingId);
+      return;
+    }
+
+    // Scheduled, Cancelled, Rescheduled
+    setBookings((prev) =>
+      prev.map((b) => (b.id === bookingId ? { ...b, status, paymentMethod: undefined } : b))
+    );
+  };
+
   const addWalkIn = (data: {
     customerName: string;
     customerPhone?: string;
     barberId: string;
     serviceId: string;
     paymentMethod: 'cash' | 'card';
+    source?: BookingSource;
+    isStudent?: boolean;
+    studentIdProof?: string;
+    allergies?: string;
   }) => {
     const barber = barbers.find((b) => b.id === data.barberId);
     const service = services.find((s) => s.id === data.serviceId);
     if (!barber || !service) return;
 
-    const timeNow = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const timeNow = new Date().toLocaleTimeString('en-US', {
+      timeZone: 'Asia/Tbilisi',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+
+    const isStudent = !!data.isStudent;
+    const originalPrice = service.price;
+    const discountPercent = isStudent ? 20 : 0;
+    const discountAmount = isStudent && originalPrice ? originalPrice * 0.2 : 0;
+    const netPrice = originalPrice ? originalPrice - discountAmount : 0;
 
     const newTicket: BookingAppointment = {
       id: 'apt-' + Date.now(),
-      ticketNumber: 'BB-' + Math.floor(100 + Math.random() * 900),
+      ticketNumber: '#BB-' + Math.floor(100 + Math.random() * 900),
       branchId: barber.branchId,
       customerName: data.customerName.trim(),
       customerPhone: data.customerPhone?.trim() || '+995 5xx xxx xxx',
+      isStudent,
+      studentIdProof: data.studentIdProof?.trim() || (isStudent ? 'Verified Student ID' : undefined),
+      allergies: data.allergies?.trim() || 'None',
       barberId: barber.id,
       barberName: barber.name,
       serviceId: service.id,
       serviceName: service.name,
-      price: service.price,
+      originalPrice,
+      discountPercent,
+      discountAmount,
+      price: netPrice,
       time: timeNow,
+      source: data.source || 'Walk-in',
       type: 'walk-in',
-      status: 'completed',
+      status: 'Completed',
       paymentMethod: data.paymentMethod,
-      createdAt: new Date().toISOString(),
+      createdAt: 'Today, ' + timeNow,
     };
 
     setBookings((prev) => [newTicket, ...prev]);
 
+    // Record Revenue
+    const newRevRecord: RevenueRecord = {
+      id: 'rev-' + Date.now(),
+      ticketNumber: newTicket.ticketNumber,
+      serviceName: newTicket.serviceName,
+      customerName: newTicket.customerName,
+      barberId: newTicket.barberId,
+      barberName: newTicket.barberName,
+      branchId: newTicket.branchId,
+      amount: newTicket.price,
+      paymentMethod: data.paymentMethod,
+      dateTime: 'Today, ' + timeNow,
+    };
+    setRevenueRecords((prev) => [newRevRecord, ...prev]);
+
+    // Upsert customer
     setCustomers((prev) => {
       const found = prev.find((c) => c.name.toLowerCase() === data.customerName.trim().toLowerCase());
       if (found) {
@@ -551,71 +787,84 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ? {
                 ...c,
                 totalVisits: c.totalVisits + 1,
-                totalSpent: c.totalSpent + service.price,
+                totalSpent: c.totalSpent + netPrice,
                 lastVisit: 'Today',
                 history: [
                   {
                     date: 'Today',
-                    serviceName: service.name,
+                    serviceName: service.name + (isStudent ? ' (Student 20% Off)' : ''),
                     barberName: barber.name,
-                    amount: service.price,
-                    type: 'walk-in',
+                    amount: netPrice,
+                    paymentMethod: data.paymentMethod,
+                    type: 'walk-in' as const,
                   },
                   ...c.history,
                 ],
               }
             : c
         );
-      } else {
-        return [
-          {
-            id: 'c-' + Date.now(),
-            name: data.customerName.trim(),
-            phone: data.customerPhone?.trim() || '+995 5xx xxx xxx',
-            totalVisits: 1,
-            totalSpent: service.price,
-            lastVisit: 'Today',
-            preferredBarber: barber.name,
-            history: [
-              {
-                date: 'Today',
-                serviceName: service.name,
-                barberName: barber.name,
-                amount: service.price,
-                type: 'walk-in',
-              },
-            ],
-          },
-          ...prev,
-        ];
       }
+      return [
+        {
+          id: 'c-' + Date.now(),
+          name: data.customerName.trim(),
+          phone: data.customerPhone?.trim() || '+995 5xx xxx xxx',
+          isStudent,
+          studentIdProof: data.studentIdProof?.trim(),
+          allergies: data.allergies?.trim() || 'None',
+          totalVisits: 1,
+          totalSpent: netPrice,
+          lastVisit: 'Today',
+          preferredBarber: barber.name,
+          history: [
+            {
+              date: 'Today',
+              serviceName: service.name + (isStudent ? ' (Student 20% Off)' : ''),
+              barberName: barber.name,
+              amount: netPrice,
+              paymentMethod: data.paymentMethod,
+              type: 'walk-in' as const,
+            },
+          ],
+        },
+        ...prev,
+      ];
     });
   };
 
-  const addExpense = (title: string, amount: number) => {
-    const newExp: Expense = {
+  const addExpense = (
+    title: string, 
+    amount: number, 
+    category: ExpenseCategory = 'Operational', 
+    description?: string,
+    branchId?: BranchId
+  ) => {
+    const newExpense: Expense = {
       id: 'e-' + Date.now(),
-      branchId: currentBranch,
+      branchId: branchId || currentBranch,
+      category,
       title: title.trim(),
-      amount,
+      amount: Math.abs(amount),
       date: 'Today',
+      description: description?.trim() || undefined,
     };
-    setExpenses((prev) => [newExp, ...prev]);
+    setExpenses((prev) => [newExpense, ...prev]);
   };
 
   const addWithdrawal = (barberId: string, amount: number, reason: string) => {
     const barber = barbers.find((b) => b.id === barberId);
     if (!barber) return;
-    const newWd: BarberWithdrawal = {
+
+    const newWithdrawal: BarberWithdrawal = {
       id: 'w-' + Date.now(),
       branchId: barber.branchId,
       barberId: barber.id,
       barberName: barber.name,
-      amount,
+      amount: Math.abs(amount),
       date: 'Today',
       reason: reason.trim() || 'Mid-month cash advance',
     };
-    setWithdrawals((prev) => [newWd, ...prev]);
+    setWithdrawals((prev) => [newWithdrawal, ...prev]);
   };
 
   return (
@@ -634,10 +883,12 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
         customers,
         expenses,
         withdrawals,
+        revenueRecords,
         branchBarbers,
         branchBookings,
         branchExpenses,
         branchWithdrawals,
+        branchRevenueRecords,
         todayCustomers,
         todayRevenue,
         todayBookingsCount,
@@ -649,6 +900,7 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
         totalWithdrawals,
         netProfit,
         cashInDrawer,
+        expensesByCategory,
         currentBarber,
         myAppointments,
         myClientsToday,
@@ -660,7 +912,10 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
         myRemainingBalance,
         createBooking,
         markCustomerArrived,
+        markCustomerInService,
+        markNoShow,
         completeService,
+        updateBookingStatus,
         addWalkIn,
         addExpense,
         addWithdrawal,
@@ -676,6 +931,8 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
 export const useCash = () => {
   const context = useContext(CashContext);
-  if (!context) throw new Error('useCash must be used within CashProvider');
+  if (!context) {
+    throw new Error('useCash must be used within a CashProvider');
+  }
   return context;
 };

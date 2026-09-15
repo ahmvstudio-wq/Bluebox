@@ -7,8 +7,8 @@ import {
   CreditCard, 
   Banknote, 
   CheckCircle2, 
-  Clock, 
-  Sparkles
+  Clock,
+  GraduationCap
 } from 'lucide-react';
 
 export const WalkInView: React.FC = () => {
@@ -22,6 +22,9 @@ export const WalkInView: React.FC = () => {
 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [isStudent, setIsStudent] = useState(false);
+  const [studentIdProof, setStudentIdProof] = useState('');
+  const [allergies, setAllergies] = useState('');
   const [selectedBarberId, setSelectedBarberId] = useState(branchBarbers[0]?.id || '');
   const [selectedServiceId, setSelectedServiceId] = useState(services[0]?.id || '');
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
@@ -30,10 +33,16 @@ export const WalkInView: React.FC = () => {
     barber: string;
     amount: number;
     method: string;
+    isStudent: boolean;
   } | null>(null);
 
   const activeBarber = branchBarbers.find((b) => b.id === selectedBarberId) || branchBarbers[0];
   const activeService = services.find((s) => s.id === selectedServiceId) || services[0];
+
+  // Price calculations
+  const originalPrice = activeService?.price || 0;
+  const discountAmount = isStudent && originalPrice ? originalPrice * 0.2 : 0;
+  const finalPrice = originalPrice ? originalPrice - discountAmount : 0;
 
   // Filter only walk-ins for today
   const walkInsList = branchBookings.filter((b) => b.type === 'walk-in');
@@ -49,17 +58,25 @@ export const WalkInView: React.FC = () => {
       barberId: selectedBarberId,
       serviceId: selectedServiceId,
       paymentMethod,
+      source: 'Walk-in',
+      isStudent,
+      studentIdProof: isStudent ? studentIdProof : undefined,
+      allergies: allergies.trim() || 'None',
     });
 
     setSuccessToast({
       customer: customerName.trim(),
       barber: activeBarber?.name || 'Barber',
-      amount: activeService?.price || 0,
+      amount: finalPrice,
       method: paymentMethod.toUpperCase(),
+      isStudent,
     });
 
     setCustomerName('');
     setCustomerPhone('');
+    setIsStudent(false);
+    setStudentIdProof('');
+    setAllergies('');
 
     setTimeout(() => {
       setSuccessToast(null);
@@ -77,7 +94,7 @@ export const WalkInView: React.FC = () => {
             Walk-in Express Register
           </h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Instant chair-side check-in. Add customer, assign barber, complete service, and automatically update client count and revenue.
+            Instant chair-side check-in. Add customer, assign barber, record student discount, complete service, and automatically update revenue.
           </p>
         </div>
 
@@ -88,7 +105,7 @@ export const WalkInView: React.FC = () => {
           </div>
           <div className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-xs flex items-center gap-2">
             <span className="text-[var(--text-muted)]">Walk-in Sales:</span>
-            <span className="font-mono font-black text-[#D4AF37] text-sm">₾{walkInTotalRevenue} GEL</span>
+            <span className="font-mono font-black text-[#D4AF37] text-sm">₾{walkInTotalRevenue.toFixed(2)} GEL</span>
           </div>
         </div>
       </div>
@@ -102,7 +119,8 @@ export const WalkInView: React.FC = () => {
               <span className="font-bold text-[var(--text-main)]">{successToast.customer}</span>'s walk-in service completed by{' '}
               <span className="font-bold text-[var(--text-main)]">{successToast.barber}</span>!
               <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                +₾{successToast.amount} GEL recorded ({successToast.method}). Barber client count & dashboard metrics automatically incremented.
+                +₾{successToast.amount.toFixed(2)} GEL recorded ({successToast.method}).
+                {successToast.isStudent && ' 20% Student Discount applied.'} 50% Barber cut: ₾{(successToast.amount * 0.5).toFixed(2)} GEL credited.
               </div>
             </div>
           </div>
@@ -163,12 +181,55 @@ export const WalkInView: React.FC = () => {
                 </div>
               </div>
 
+              {/* Student Discount Toggle */}
+              <div className="p-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer font-bold text-[var(--text-main)]">
+                  <input
+                    type="checkbox"
+                    checked={isStudent}
+                    onChange={(e) => setIsStudent(e.target.checked)}
+                    className="w-4 h-4 rounded text-[#D4AF37] focus:ring-[#D4AF37]"
+                  />
+                  <span className="flex items-center gap-1.5">
+                    <GraduationCap className="w-4 h-4 text-[#D4AF37]" />
+                    Student Discount (20% Off: Hair + Beard = 36 GEL)
+                  </span>
+                </label>
+
+                {isStudent && (
+                  <div className="pt-1.5 border-t border-[var(--border-subtle)] space-y-1 animate-in fade-in">
+                    <label className="block text-[11px] text-[var(--text-muted)] font-medium">Student ID Proof / Card #</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. TSU-2024-8192 or Iliauni Card"
+                      value={studentIdProof}
+                      onChange={(e) => setStudentIdProof(e.target.value)}
+                      className="w-full py-1 text-xs"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Allergies */}
+              <div>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">
+                  Allergies / Special Notes
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. None, or Alcohol sensitivity"
+                  value={allergies}
+                  onChange={(e) => setAllergies(e.target.value)}
+                  className="w-full"
+                />
+              </div>
+
               {/* Barber Selector */}
               <div>
                 <label className="block text-[var(--text-muted)] font-semibold mb-1.5">
                   Select Barber Serving Customer *
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                   {branchBarbers.map((b) => {
                     const isSelected = selectedBarberId === b.id;
                     return (
@@ -205,9 +266,11 @@ export const WalkInView: React.FC = () => {
                 <label className="block text-[var(--text-muted)] font-semibold mb-1.5">
                   Select Service *
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {services.map((s) => {
                     const isSelected = selectedServiceId === s.id;
+                    const priceDisplay = s.price !== null ? (isStudent ? `₾${s.price - s.price * 0.2}` : `₾${s.price}`) : 'TBD';
+
                     return (
                       <div
                         key={s.id}
@@ -227,7 +290,7 @@ export const WalkInView: React.FC = () => {
                           </div>
                         </div>
                         <span className="font-mono font-extrabold text-sm text-[#D4AF37]">
-                          ₾{s.price}
+                          {priceDisplay}
                         </span>
                       </div>
                     );
@@ -240,43 +303,47 @@ export const WalkInView: React.FC = () => {
                 <label className="block text-[var(--text-muted)] font-semibold mb-1.5">
                   Payment Method *
                 </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
+                <div className="grid grid-cols-2 gap-3">
+                  <div
                     onClick={() => setPaymentMethod('cash')}
-                    className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                    className={`p-3 rounded-xl border cursor-pointer flex items-center justify-center gap-2 font-bold transition-all ${
                       paymentMethod === 'cash'
-                        ? 'bg-emerald-600 border-emerald-400 text-white shadow-sm'
-                        : 'bg-[var(--bg-subtle)] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                        ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                        : 'bg-[var(--bg-subtle)] border-[var(--border-subtle)] text-[var(--text-muted)]'
                     }`}
                   >
                     <Banknote className="w-4 h-4" />
-                    <span>Cash Payment</span>
-                  </button>
+                    <span>Cash</span>
+                  </div>
 
-                  <button
-                    type="button"
+                  <div
                     onClick={() => setPaymentMethod('card')}
-                    className={`p-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                    className={`p-3 rounded-xl border cursor-pointer flex items-center justify-center gap-2 font-bold transition-all ${
                       paymentMethod === 'card'
-                        ? 'bg-[#18181B] dark:bg-[#27272A] border-[#D4AF37] text-[#D4AF37] shadow-sm'
-                        : 'bg-[var(--bg-subtle)] border-[var(--border-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                        ? 'bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border-[#D4AF37] shadow-sm'
+                        : 'bg-[var(--bg-subtle)] border-[var(--border-subtle)] text-[var(--text-muted)]'
                     }`}
                   >
                     <CreditCard className="w-4 h-4" />
                     <span>Card / POS</span>
-                  </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Summary & Submit */}
-              <div className="pt-3 border-t border-[var(--border-subtle)]">
+              {/* Order Summary & Submit */}
+              <div className="pt-2 border-t border-[var(--border-subtle)]">
+                <div className="flex items-center justify-between mb-3 text-sm">
+                  <span className="text-[var(--text-muted)] font-medium">Ticket Total:</span>
+                  <span className="font-mono text-xl font-black text-[#D4AF37]">
+                    {finalPrice ? `₾${finalPrice.toFixed(2)} GEL` : 'Price TBD'}
+                  </span>
+                </div>
                 <button
                   type="submit"
-                  className="w-full btn-primary-gold py-3 text-sm font-black flex items-center justify-center gap-2"
+                  className="w-full btn-primary-gold py-2.5 font-black flex items-center justify-center gap-2 shadow-md active:scale-[0.99]"
                 >
-                  <Sparkles className="w-4 h-4" />
-                  <span>Complete Service & Collect ₾{activeService?.price} GEL</span>
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Complete Service & Record Revenue</span>
                 </button>
               </div>
 
@@ -284,55 +351,54 @@ export const WalkInView: React.FC = () => {
           </div>
         </div>
 
-        {/* Right: Today's Walk-in Activity Log (6 Cols) */}
+        {/* Right: Completed Walk-in Ledger (6 Cols) */}
         <div className="lg:col-span-6 space-y-4">
           <div className="card-executive p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
               <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
                 <Clock className="w-4 h-4 text-[#D4AF37]" />
-                Today's Walk-In Clients Served
+                Completed Walk-Ins Today ({walkInsList.length})
               </h3>
-              <span className="text-xs font-mono font-bold text-[#D4AF37]">
-                {walkInsList.length} completed
+              <span className="text-xs font-mono font-bold text-emerald-500">
+                Total: ₾{walkInTotalRevenue.toFixed(2)} GEL
               </span>
             </div>
 
             <div className="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
               {walkInsList.length === 0 ? (
-                <div className="p-8 text-center text-xs text-[var(--text-dim)]">
-                  No walk-ins served yet today. Fill the quick form on the left to check in a client.
+                <div className="p-8 text-center text-xs text-[var(--text-dim)] border border-dashed border-[var(--border-subtle)] rounded-xl">
+                  No walk-in clients recorded yet today.
                 </div>
               ) : (
-                walkInsList.map((item) => (
+                walkInsList.map((w) => (
                   <div
-                    key={item.id}
-                    className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between text-xs hover:border-[var(--text-dim)] transition-all"
+                    key={w.id}
+                    className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between hover:border-[var(--border-card)] transition-colors text-xs"
                   >
-                    <div className="space-y-1">
+                    <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-[var(--text-main)] text-sm">{item.customerName}</span>
-                        <span className="px-1.5 py-0.2 rounded bg-[var(--bg-card)] font-mono text-[10px] text-[var(--text-dim)] border border-[var(--border-subtle)]">
-                          {item.ticketNumber}
-                        </span>
+                        <span className="font-mono font-bold text-[var(--text-main)]">{w.ticketNumber}</span>
+                        <span className="font-extrabold text-[var(--text-main)]">{w.customerName}</span>
+                        {w.isStudent && (
+                          <span className="badge-status badge-gold">Student -20%</span>
+                        )}
                       </div>
-                      <div className="text-[11px] text-[var(--text-muted)]">
-                        {item.serviceName} • Barber:{' '}
-                        <span className="text-[var(--text-main)] font-semibold">{item.barberName}</span>
+                      <div className="text-[11px] text-[var(--text-muted)] mt-1">
+                        {w.serviceName} • Barber: <strong className="text-[var(--text-main)]">{w.barberName}</strong>
                       </div>
+                      {w.allergies && w.allergies !== 'None' && (
+                        <div className="text-[10px] text-rose-500 mt-0.5">
+                          Allergies: {w.allergies}
+                        </div>
+                      )}
                     </div>
 
                     <div className="text-right">
-                      <span className="text-sm font-black text-[var(--text-main)] font-mono block">
-                        ₾{item.price} GEL
+                      <span className="font-mono font-black text-sm text-emerald-500 block">
+                        +₾{w.price.toFixed(2)} GEL
                       </span>
-                      <span
-                        className={`text-[10px] font-bold uppercase px-1.5 py-0.2 rounded ${
-                          item.paymentMethod === 'cash'
-                            ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/30'
-                            : 'bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/30'
-                        }`}
-                      >
-                        {item.paymentMethod}
+                      <span className="text-[10px] text-[var(--text-dim)] uppercase font-mono">
+                        {w.paymentMethod}
                       </span>
                     </div>
                   </div>

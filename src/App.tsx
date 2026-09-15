@@ -98,13 +98,15 @@ export const App: React.FC = () => {
 
         {/* Dynamic View Canvas */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto">
-          {adminTab === 'dashboard' && <DashboardView />}
-          {adminTab === 'barbers' && <BarbersView />}
-          {adminTab === 'customers' && <CustomersView />}
-          {adminTab === 'booking' && <BookingView />}
-          {adminTab === 'walkin' && <WalkInView />}
-          {adminTab === 'finance' && <FinanceView />}
-          {adminTab === 'branches' && <BranchesView />}
+          <div key={adminTab} className="animate-page-enter">
+            {adminTab === 'dashboard' && <DashboardView />}
+            {adminTab === 'barbers' && <BarbersView />}
+            {adminTab === 'customers' && <CustomersView />}
+            {adminTab === 'booking' && <BookingView />}
+            {adminTab === 'walkin' && <WalkInView />}
+            {adminTab === 'finance' && <FinanceView />}
+            {adminTab === 'branches' && <BranchesView />}
+          </div>
         </main>
 
         {/* System Footer */}

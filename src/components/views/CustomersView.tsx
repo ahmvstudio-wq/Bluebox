@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useCash } from '../../context/CashContext';
-import { Users, Search, Phone, History, Scissors } from 'lucide-react';
+import { Users, Search, Phone, History, Scissors, GraduationCap, AlertCircle, ShieldAlert } from 'lucide-react';
 
 export const CustomersView: React.FC = () => {
   const { customers } = useCash();
@@ -10,7 +10,8 @@ export const CustomersView: React.FC = () => {
   const filtered = customers.filter(
     (c) =>
       c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      c.phone.includes(searchQuery)
+      c.phone.includes(searchQuery) ||
+      (c.studentIdProof && c.studentIdProof.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const selected = customers.find((c) => c.id === selectedCustomerId) || customers[0];
@@ -26,18 +27,18 @@ export const CustomersView: React.FC = () => {
             Customer Directory & Profiles
           </h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Client profiles, visit counts, preferred barbers, and lifetime spend history.
+            Client profiles with Student status (20% discount), verified Student ID proof, allergy logs, and visit history.
           </p>
         </div>
 
-        <div className="relative min-w-[240px]">
+        <div className="relative min-w-[260px]">
           <Search className="w-3.5 h-3.5 text-[var(--text-dim)] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search customer or phone..."
+            placeholder="Search name, phone or student ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-8"
+            className="w-full pl-8 text-xs"
           />
         </div>
       </div>
@@ -61,8 +62,15 @@ export const CustomersView: React.FC = () => {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <h4 className="font-bold text-sm text-[var(--text-main)]">{c.name}</h4>
-                    <div className="text-xs text-[var(--text-muted)] mt-0.5 flex items-center gap-1">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-bold text-sm text-[var(--text-main)]">{c.name}</h4>
+                      {c.isStudent && (
+                        <span className="badge-status badge-gold flex items-center gap-1 text-[10px]">
+                          <GraduationCap className="w-3 h-3" /> Student
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-[var(--text-muted)] mt-0.5 flex items-center gap-1 font-mono">
                       <Phone className="w-3 h-3 text-[var(--text-dim)]" />
                       <span>{c.phone}</span>
                     </div>
@@ -77,6 +85,12 @@ export const CustomersView: React.FC = () => {
                     </span>
                   </div>
                 </div>
+
+                {c.allergies && c.allergies !== 'None' && (
+                  <div className="mt-2 text-[10px] text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                    Allergies: {c.allergies}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -90,14 +104,56 @@ export const CustomersView: React.FC = () => {
               {/* Header */}
               <div className="flex items-start justify-between border-b border-[var(--border-subtle)] pb-4">
                 <div>
-                  <h3 className="text-lg font-bold text-[var(--text-main)]">{selected.name}</h3>
-                  <div className="text-xs text-[var(--text-muted)] mt-1">{selected.phone}</div>
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="text-xl font-extrabold text-[var(--text-main)]">{selected.name}</h3>
+                    {selected.isStudent ? (
+                      <span className="badge-status badge-gold flex items-center gap-1.5 text-xs">
+                        <GraduationCap className="w-3.5 h-3.5" /> Student (20% Off)
+                      </span>
+                    ) : (
+                      <span className="badge-status badge-neutral text-xs">Regular Client</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-[var(--text-muted)] mt-1 font-mono">{selected.phone}</div>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] block">Total Spending</span>
+                  <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] block">Total Spend</span>
                   <span className="text-2xl font-black text-[#D4AF37] font-mono">
                     ₾{selected.totalSpent.toFixed(2)} GEL
                   </span>
+                </div>
+              </div>
+
+              {/* Customer Fields Dossier Card */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {/* Student Info Box */}
+                <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-1">
+                  <div className="text-[10px] uppercase font-bold text-[var(--text-dim)] flex items-center gap-1">
+                    <GraduationCap className="w-3 h-3 text-[#D4AF37]" />
+                    Student Status
+                  </div>
+                  <div className="font-extrabold text-[var(--text-main)] text-sm">
+                    {selected.isStudent ? 'Yes — Eligible for 20% Discount' : 'No'}
+                  </div>
+                  {selected.studentIdProof && (
+                    <div className="text-[11px] text-[var(--text-muted)]">
+                      Proof: <span className="font-mono font-semibold text-[var(--text-main)]">{selected.studentIdProof}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Allergies Box */}
+                <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-1">
+                  <div className="text-[10px] uppercase font-bold text-[var(--text-dim)] flex items-center gap-1">
+                    <ShieldAlert className="w-3 h-3 text-rose-500" />
+                    Allergies & Skin Sensitivities
+                  </div>
+                  <div className={`font-bold text-sm ${selected.allergies !== 'None' ? 'text-rose-500 dark:text-rose-400' : 'text-[var(--text-main)]'}`}>
+                    {selected.allergies || 'None'}
+                  </div>
+                  <div className="text-[10px] text-[var(--text-dim)]">
+                    Checked prior to razor lineups & aftershave treatments
+                  </div>
                 </div>
               </div>
 
@@ -121,7 +177,7 @@ export const CustomersView: React.FC = () => {
               <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
                   <History className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  Visit History
+                  Visit & Service History
                 </h4>
 
                 <div className="space-y-1.5">
@@ -133,12 +189,19 @@ export const CustomersView: React.FC = () => {
                         <div>
                           <div className="font-bold text-[var(--text-main)]">{h.serviceName}</div>
                           <div className="text-[10px] text-[var(--text-dim)]">
-                            {h.date} • Barber: {h.barberName} ({h.type})
+                            {h.date} • {h.barberName} ({h.type})
                           </div>
                         </div>
-                        <span className="font-mono font-bold text-[var(--text-main)]">
-                          ₾{h.amount} GEL
-                        </span>
+                        <div className="text-right">
+                          <span className="font-mono font-bold text-[var(--text-main)] block">
+                            ₾{h.amount.toFixed(2)} GEL
+                          </span>
+                          {h.paymentMethod && (
+                            <span className="text-[10px] text-[var(--text-dim)] uppercase font-mono">
+                              {h.paymentMethod}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))
                   )}
