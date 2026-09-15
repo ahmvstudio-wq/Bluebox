@@ -15,24 +15,69 @@ import {
   TrendingUp,
   Award,
   DollarSign,
-  Users
+  Users,
+  Settings,
+  Percent,
+  Sliders,
+  Sparkles,
+  Save
 } from 'lucide-react';
+import { Barber } from '../../types';
 
 export const BarbersView: React.FC = () => {
   const { 
+    barbers,
     barberPerformanceList, 
     branchBookings, 
     branchWithdrawals, 
     loginAsBarber,
+    updateBarberCommission,
     branches,
     currentBranch
   } = useCash();
 
   const [expandedBarberId, setExpandedBarberId] = useState<string | null>(null);
 
-  // Top Performance Benchmark Metrics
+  // Commission Allocator Modal State
+  const [isCommissionModalOpen, setIsCommissionModalOpen] = useState(false);
+  const [selectedBarberId, setSelectedBarberId] = useState<string>('');
+  const [commissionPercent, setCommissionPercent] = useState<number>(50);
+  const [workingHours, setWorkingHours] = useState<number>(8);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Active branch context
   const activeBranchData = branches.find((b) => b.id === currentBranch) || branches[0];
 
+  // Selected Barber Object for Modal
+  const currentModalBarber = useMemo(() => {
+    if (!selectedBarberId && barbers.length > 0) return barbers[0];
+    return barbers.find((b) => b.id === selectedBarberId) || barbers[0];
+  }, [selectedBarberId, barbers]);
+
+  // Open modal preselected for a specific barber
+  const openCommissionModalForBarber = (barber: Barber) => {
+    setSelectedBarberId(barber.id);
+    setCommissionPercent(Math.round(barber.commissionRate * 100));
+    setWorkingHours(barber.workingHours);
+    setIsCommissionModalOpen(true);
+  };
+
+  const handleSaveCommission = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentModalBarber) return;
+
+    const rateFraction = commissionPercent / 100;
+    updateBarberCommission(currentModalBarber.id, rateFraction, workingHours);
+
+    setToastMessage(`✓ Commission updated for ${currentModalBarber.name}: ${commissionPercent}% Tier (${workingHours}h shift).`);
+    setIsCommissionModalOpen(false);
+
+    setTimeout(() => {
+      setToastMessage(null), 4000;
+    });
+  };
+
+  // 1. Staff Performance Benchmark Metrics
   const topCutsBarber = useMemo(() => {
     if (!barberPerformanceList.length) return null;
     return [...barberPerformanceList].sort((a, b) => b.servicesCompleted - a.servicesCompleted)[0];
@@ -68,17 +113,41 @@ export const BarbersView: React.FC = () => {
   return (
     <div className="space-y-6">
       
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="p-3 bg-emerald-950/20 border border-emerald-500/40 rounded-xl text-xs text-emerald-500 flex items-center justify-between shadow-md animate-fade-in">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+            <span className="font-semibold text-[var(--text-main)]">{toastMessage}</span>
+          </div>
+          <button onClick={() => setToastMessage(null)} className="text-emerald-500 text-sm font-bold">×</button>
+        </div>
+      )}
+
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
             <Scissors className="w-5 h-5 text-[#D4AF37]" />
-            Barber Performance & Staff Dossiers
+            Barber Performance & Commission Allocation
           </h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Operational leaderboards, individual chair output, and live station ledgers for {activeBranchData.name}.
+            Operational leaderboards, individual chair output, custom commission tiers, and live station ledgers for {activeBranchData.name}.
           </p>
         </div>
+
+        {/* Global Commission Allocator Action */}
+        <button
+          onClick={() => {
+            if (barbers.length > 0) {
+              openCommissionModalForBarber(barbers[0]);
+            }
+          }}
+          className="btn-primary-gold text-xs py-2 px-4 font-bold flex items-center gap-2 shadow-md active:scale-95 shrink-0 self-start sm:self-auto"
+        >
+          <Sliders className="w-3.5 h-3.5" />
+          <span>Allocate Commission & Rates</span>
+        </button>
       </div>
 
       {/* 1. Staff Performance Benchmark Metrics */}
@@ -172,7 +241,7 @@ export const BarbersView: React.FC = () => {
           const isExpanded = expandedBarberId === stat.barber.id;
           const barberBranch = branches.find((b) => b.id === stat.barber.branchId);
           const barberBookings = branchBookings.filter((b) => b.barberId === stat.barber.id);
-          const barberWithdrawalsList = branchWithdrawals.filter((w) => w.barberId === stat.barber.id);
+          const commissionPercentDisplay = Math.round(stat.barber.commissionRate * 100);
 
           if (isExpanded) {
             return (
@@ -191,7 +260,16 @@ export const BarbersView: React.FC = () => {
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
                         <h3 className="text-lg sm:text-xl font-black text-[var(--text-main)]">{stat.barber.name}</h3>
-                        <span className="badge-status badge-gold">50% Commission</span>
+                        
+                        {/* Clickable Commission Badge */}
+                        <button
+                          onClick={() => openCommissionModalForBarber(stat.barber)}
+                          className="badge-status badge-gold cursor-pointer hover:scale-105 transition-transform"
+                          title="Click to allocate custom commission rate"
+                        >
+                          {commissionPercentDisplay}% Commission ⚙️
+                        </button>
+
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-muted)]">
                           {stat.barber.workingHours}h Shift
                         </span>
@@ -207,6 +285,15 @@ export const BarbersView: React.FC = () => {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
+                    {/* Allocate Commission Button */}
+                    <button
+                      onClick={() => openCommissionModalForBarber(stat.barber)}
+                      className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
+                    >
+                      <Sliders className="w-3.5 h-3.5 text-[#D4AF37]" />
+                      <span>Allocate Commission</span>
+                    </button>
+
                     <button
                       onClick={() => loginAsBarber(stat.barber.id)}
                       className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
@@ -239,7 +326,7 @@ export const BarbersView: React.FC = () => {
                   </div>
 
                   <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">50% Barber Payout</span>
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{commissionPercentDisplay}% Barber Payout</span>
                     <span className="text-lg font-black text-[#D4AF37] font-mono">₾{stat.barberEarnings.toFixed(2)}</span>
                     <span className="text-[9px] text-[var(--text-dim)] block">Today's Share</span>
                   </div>
@@ -271,7 +358,7 @@ export const BarbersView: React.FC = () => {
                           <div className="text-right">
                             <span className="font-mono font-bold text-[#D4AF37]">₾{apt.price.toFixed(2)}</span>
                             <span className={`text-[9px] px-2 py-0.5 rounded-md ml-1 font-mono uppercase font-bold ${
-                              apt.status === 'completed' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
+                              apt.status.toLowerCase() === 'completed' ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20' : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
                             }`}>
                               {apt.status}
                             </span>
@@ -314,9 +401,14 @@ export const BarbersView: React.FC = () => {
                     </div>
                   </div>
 
-                  <span className="badge-status badge-gold text-[9px] px-1.5 py-0.5">
-                    50% Cut
-                  </span>
+                  {/* Clickable Commission Badge */}
+                  <button
+                    onClick={() => openCommissionModalForBarber(stat.barber)}
+                    className="badge-status badge-gold text-[9px] px-2 py-0.5 hover:scale-105 transition-transform cursor-pointer"
+                    title="Click to allocate commission percentage"
+                  >
+                    {commissionPercentDisplay}% Cut
+                  </button>
                 </div>
 
                 {/* 2-Column Stats */}
@@ -327,19 +419,28 @@ export const BarbersView: React.FC = () => {
                   </div>
 
                   <div className="p-2 bg-[var(--bg-subtle)] rounded-lg">
-                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Clients Served</span>
-                    <span className="font-mono font-black text-sm text-emerald-500">{stat.clientsServedToday}</span>
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{commissionPercentDisplay}% Earned</span>
+                    <span className="font-mono font-black text-sm text-[#D4AF37]">₾{stat.barberEarnings.toFixed(0)}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Action */}
-              <div className="mt-4 pt-2 border-t border-[var(--border-subtle)]">
+              {/* Action Buttons */}
+              <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] flex items-center gap-2">
+                <button
+                  onClick={() => openCommissionModalForBarber(stat.barber)}
+                  className="flex-1 py-1.5 px-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-[#D4AF37]/40 text-xs font-bold text-[#D4AF37] flex items-center justify-center gap-1 transition-all active:scale-95"
+                  title="Configure commission rate & percentages"
+                >
+                  <Percent className="w-3 h-3" />
+                  <span>Allocate</span>
+                </button>
+
                 <button
                   onClick={() => setExpandedBarberId(stat.barber.id)}
-                  className="w-full py-1.5 px-3 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[#D4AF37] text-xs font-semibold text-[var(--text-main)] flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
+                  className="flex-1 py-1.5 px-2 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[#D4AF37] text-xs font-semibold text-[var(--text-main)] flex items-center justify-center gap-1 transition-all active:scale-95"
                 >
-                  <span>View Chair Dossier</span>
+                  <span>Dossier</span>
                   <ChevronDown className="w-3.5 h-3.5 text-[#D4AF37]" />
                 </button>
               </div>
@@ -347,6 +448,183 @@ export const BarbersView: React.FC = () => {
           );
         })}
       </div>
+
+      {/* 3. Universal Admin Barber Commission & Percentage Allocation Modal */}
+      {isCommissionModalOpen && currentModalBarber && (
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl max-w-lg w-full p-4 sm:p-6 shadow-2xl space-y-5 animate-scale-in max-h-[92vh] overflow-y-auto">
+            
+            {/* Modal Header */}
+            <div className="flex items-start justify-between border-b border-[var(--border-subtle)] pb-4">
+              <div className="flex items-center gap-3.5">
+                <div className="p-3 rounded-2xl bg-amber-500/10 text-[#D4AF37] border border-[#D4AF37]/30">
+                  <Sliders className="w-6 h-6" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-[var(--text-main)]">
+                    Allocate Barber Commission & Tiers
+                  </h3>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                    Configure revenue split percentage and station shift parameters for staff.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsCommissionModalOpen(false)}
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-subtle)]"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveCommission} className="space-y-4">
+              
+              {/* Barber Selector Dropdown */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                  Select Barber / Stylist:
+                </label>
+                <select
+                  value={selectedBarberId}
+                  onChange={(e) => {
+                    const b = barbers.find((item) => item.id === e.target.value);
+                    if (b) {
+                      setSelectedBarberId(b.id);
+                      setCommissionPercent(Math.round(b.commissionRate * 100));
+                      setWorkingHours(b.workingHours);
+                    }
+                  }}
+                  className="w-full text-xs font-bold py-2.5 px-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-main)] focus:border-[#D4AF37] cursor-pointer"
+                >
+                  {barbers.map((b) => {
+                    const bBranch = branches.find((br) => br.id === b.branchId);
+                    return (
+                      <option key={b.id} value={b.id}>
+                        {b.name} — {b.specialty} ({bBranch?.shortName || b.branchId}) • Current: {Math.round(b.commissionRate * 100)}%
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Commission Percentage Selector & Slider */}
+              <div className="p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
+                    <Percent className="w-4 h-4 text-[#D4AF37]" />
+                    Commission Percentage:
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-2xl font-black font-mono text-[#D4AF37]">{commissionPercent}%</span>
+                    <span className="text-xs text-[var(--text-dim)] font-bold">Payout</span>
+                  </div>
+                </div>
+
+                {/* Range Slider */}
+                <input
+                  type="range"
+                  min="20"
+                  max="90"
+                  step="1"
+                  value={commissionPercent}
+                  onChange={(e) => setCommissionPercent(parseInt(e.target.value))}
+                  className="w-full h-2 bg-[var(--border-subtle)] rounded-lg appearance-none cursor-pointer accent-[#D4AF37]"
+                />
+
+                {/* Quick Presets */}
+                <div className="pt-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] block mb-1.5">
+                    Quick Tier Presets:
+                  </span>
+                  <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+                    {[40, 45, 50, 55, 60, 70].map((rate) => (
+                      <button
+                        key={rate}
+                        type="button"
+                        onClick={() => setCommissionPercent(rate)}
+                        className={`py-1.5 px-2 rounded-lg text-xs font-bold transition-all ${
+                          commissionPercent === rate
+                            ? 'bg-[#D4AF37] text-black shadow-xs font-extrabold'
+                            : 'bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
+                        }`}
+                      >
+                        {rate}%
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Working Hours Shift */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">
+                  Daily Station Shift:
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {[6, 7, 8, 10].map((hours) => (
+                    <button
+                      key={hours}
+                      type="button"
+                      onClick={() => setWorkingHours(hours)}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                        workingHours === hours
+                          ? 'bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/50 shadow-xs'
+                          : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
+                      }`}
+                    >
+                      {hours} Hours
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Live Revenue Split Simulator */}
+              <div className="p-3.5 bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] space-y-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-[#D4AF37]" />
+                  Live Payout Simulation (Sample ₾45.00 GEL Haircut):
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                  <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="text-[9px] uppercase font-bold text-emerald-500 block">{currentModalBarber.name} ({commissionPercent}%)</span>
+                    <span className="text-sm font-black font-mono text-emerald-500">
+                      ₾{((45 * commissionPercent) / 100).toFixed(2)} GEL
+                    </span>
+                  </div>
+                  <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <span className="text-[9px] uppercase font-bold text-[#D4AF37] block">Shop Gross Margin ({100 - commissionPercent}%)</span>
+                    <span className="text-sm font-black font-mono text-[#D4AF37]">
+                      ₾{((45 * (100 - commissionPercent)) / 100).toFixed(2)} GEL
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsCommissionModalOpen(false)}
+                  className="btn-secondary text-xs py-2 px-4 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary-gold text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow-md active:scale-95"
+                >
+                  <Save className="w-3.5 h-3.5" />
+                  <span>Save & Apply Allocation</span>
+                </button>
+              </div>
+
+            </form>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

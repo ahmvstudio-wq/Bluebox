@@ -135,6 +135,7 @@ interface CashContextType {
     branchId?: BranchId
   ) => void;
   addWithdrawal: (barberId: string, amount: number, reason: string) => void;
+  updateBarberCommission: (barberId: string, newRate: number, workingHours?: number) => void;
   
   // Theme (Light / Dark)
   theme: 'dark' | 'light';
@@ -879,6 +880,23 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setWithdrawals((prev) => [newWithdrawal, ...prev]);
   };
 
+  const updateBarberCommission = (barberId: string, newRate: number, workingHours?: number) => {
+    setBarbers((prev) => {
+      const updated = prev.map((b) => {
+        if (b.id === barberId) {
+          return {
+            ...b,
+            commissionRate: Math.max(0, Math.min(1, newRate)),
+            workingHours: workingHours !== undefined ? workingHours : b.workingHours,
+          };
+        }
+        return b;
+      });
+      localStorage.setItem('bb_barbers', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
     <CashContext.Provider
       value={{
@@ -931,6 +949,7 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
         addWalkIn,
         addExpense,
         addWithdrawal,
+        updateBarberCommission,
         theme,
         toggleTheme,
         resetToDefaultData,
