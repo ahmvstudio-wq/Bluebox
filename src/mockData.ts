@@ -521,12 +521,12 @@ export const INITIAL_CUSTOMERS: Customer[] = [
     allergies: 'None',
     totalVisits: 14,
     totalSpent: 630.00,
-    lastVisit: 'Today',
+    lastVisit: '2026-09-15',
     preferredBarber: 'Barber #1',
     history: [
-      { date: 'Today', serviceName: 'Hair + Beard', barberName: 'Barber #1', amount: 45, paymentMethod: 'cash', type: 'booking' },
-      { date: '2 weeks ago', serviceName: 'Hair + Beard', barberName: 'Barber #1', amount: 45, paymentMethod: 'cash', type: 'booking' },
-      { date: '1 month ago', serviceName: 'Hair + Beard', barberName: 'Barber #1', amount: 45, paymentMethod: 'card', type: 'booking' },
+      { date: '2026-09-15', serviceName: 'Hair + Beard', barberName: 'Barber #1', amount: 45, paymentMethod: 'cash', type: 'booking' },
+      { date: '2026-09-08', serviceName: 'Hair + Beard', barberName: 'Barber #1', amount: 45, paymentMethod: 'cash', type: 'booking' },
+      { date: '2026-08-25', serviceName: 'Hair + Beard', barberName: 'Barber #1', amount: 45, paymentMethod: 'card', type: 'booking' },
     ],
   },
   {
@@ -538,11 +538,11 @@ export const INITIAL_CUSTOMERS: Customer[] = [
     allergies: 'Sensitive to alcohol aftershaves',
     totalVisits: 8,
     totalSpent: 288.00,
-    lastVisit: 'Today',
+    lastVisit: '2026-09-15',
     preferredBarber: 'Barber #2',
     history: [
-      { date: 'Today', serviceName: 'Hair + Beard (Student 20% Off)', barberName: 'Barber #2', amount: 36, paymentMethod: 'card', type: 'booking' },
-      { date: '3 weeks ago', serviceName: 'Hair + Beard', barberName: 'Barber #2', amount: 36, paymentMethod: 'card', type: 'booking' },
+      { date: '2026-09-15', serviceName: 'Hair + Beard (Student 20% Off)', barberName: 'Barber #2', amount: 36, paymentMethod: 'card', type: 'booking' },
+      { date: '2026-09-01', serviceName: 'Hair + Beard', barberName: 'Barber #2', amount: 36, paymentMethod: 'card', type: 'booking' },
     ],
   },
   {
@@ -553,10 +553,11 @@ export const INITIAL_CUSTOMERS: Customer[] = [
     allergies: 'None',
     totalVisits: 19,
     totalSpent: 855.00,
-    lastVisit: 'Today',
+    lastVisit: '2026-09-15',
     preferredBarber: 'Barber #1',
     history: [
-      { date: 'Today', serviceName: 'Hair + Beard', barberName: 'Barber #1', amount: 45, paymentMethod: 'card', type: 'booking' },
+      { date: '2026-09-15', serviceName: 'Hair + Beard', barberName: 'Barber #1', amount: 45, paymentMethod: 'card', type: 'booking' },
+      { date: '2026-09-14', serviceName: 'Hydrofacial Deep Cleanse', barberName: 'Barber #1', amount: 80, paymentMethod: 'card', type: 'walk-in' },
     ],
   },
   {
@@ -568,10 +569,11 @@ export const INITIAL_CUSTOMERS: Customer[] = [
     allergies: 'Fragrance-sensitive beard oils',
     totalVisits: 5,
     totalSpent: 180.00,
-    lastVisit: 'Today',
+    lastVisit: '2026-09-14',
     preferredBarber: 'Barber #3',
     history: [
-      { date: 'Today', serviceName: 'Hair + Beard (Student 20% Off)', barberName: 'Barber #3', amount: 36, paymentMethod: 'cash', type: 'booking' },
+      { date: '2026-09-14', serviceName: 'Hair + Beard (Student 20% Off)', barberName: 'Barber #3', amount: 36, paymentMethod: 'cash', type: 'booking' },
+      { date: '2026-09-07', serviceName: 'Hair Cut & Styling', barberName: 'Barber #3', amount: 30, paymentMethod: 'cash', type: 'walk-in' },
     ],
   },
   {
@@ -583,12 +585,70 @@ export const INITIAL_CUSTOMERS: Customer[] = [
     allergies: 'None',
     totalVisits: 6,
     totalSpent: 216.00,
-    lastVisit: 'Today',
+    lastVisit: '2026-09-14',
     preferredBarber: 'Barber #2',
     history: [
-      { date: 'Today', serviceName: 'Hair + Beard (Student 20% Off)', barberName: 'Barber #2', amount: 36, paymentMethod: 'card', type: 'booking' },
+      { date: '2026-09-14', serviceName: 'Hair + Beard (Student 20% Off)', barberName: 'Barber #2', amount: 36, paymentMethod: 'card', type: 'booking' },
     ],
   },
+  {
+    id: 'c6',
+    name: 'George Bagrationi',
+    phone: '+995 593 881 234',
+    isStudent: false,
+    allergies: 'None',
+    totalVisits: 11,
+    totalSpent: 520.00,
+    lastVisit: '2026-09-12',
+    preferredBarber: 'Barber #4',
+    history: [
+      { date: '2026-09-12', serviceName: 'Royal Shave & Face Treatment', barberName: 'Barber #4', amount: 75, paymentMethod: 'card', type: 'booking' },
+      { date: '2026-08-28', serviceName: 'Hair + Beard', barberName: 'Barber #4', amount: 45, paymentMethod: 'card', type: 'booking' },
+    ],
+  },
+  {
+    id: 'c7',
+    name: 'Irakli Kobakhidze',
+    phone: '+995 558 776 543',
+    isStudent: false,
+    allergies: 'Prone to clipper rash on neckline',
+    totalVisits: 7,
+    totalSpent: 315.00,
+    lastVisit: '2026-09-10',
+    preferredBarber: 'Barber #5',
+    history: [
+      { date: '2026-09-10', serviceName: 'Classic Scissor Cut', barberName: 'Barber #5', amount: 40, paymentMethod: 'cash', type: 'booking' },
+    ],
+  },
+  {
+    id: 'c8',
+    name: 'Luka Beridze',
+    phone: '+995 571 332 119',
+    isStudent: true,
+    studentIdProof: 'GTU-9021-ENG',
+    allergies: 'None',
+    totalVisits: 4,
+    totalSpent: 144.00,
+    lastVisit: '2026-09-05',
+    preferredBarber: 'Barber #6',
+    history: [
+      { date: '2026-09-05', serviceName: 'Hair + Beard (Student 20% Off)', barberName: 'Barber #6', amount: 36, paymentMethod: 'cash', type: 'walk-in' },
+    ],
+  },
+  {
+    id: 'c9',
+    name: 'Vakhtang Gorgasali',
+    phone: '+995 599 001 928',
+    isStudent: false,
+    allergies: 'None',
+    totalVisits: 22,
+    totalSpent: 1150.00,
+    lastVisit: '2026-08-29',
+    preferredBarber: 'Barber #1',
+    history: [
+      { date: '2026-08-29', serviceName: 'Master VIP Styling Package', barberName: 'Barber #1', amount: 95, paymentMethod: 'card', type: 'booking' },
+    ],
+  }
 ];
 
 export const INITIAL_EXPENSES: Expense[] = [

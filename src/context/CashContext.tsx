@@ -178,7 +178,7 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   // Schema version management to seamlessly reload the new mock dataset and admin name
-  const DATA_VERSION = 'v5_blackbox_admin';
+  const DATA_VERSION = 'v6_blackbox_customers_date_filter';
   useEffect(() => {
     const storedVersion = localStorage.getItem('bb_data_version');
     if (storedVersion !== DATA_VERSION) {
