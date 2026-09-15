@@ -177,12 +177,13 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
-  // Schema version management to seamlessly reload the new mock dataset
-  const DATA_VERSION = 'v4_numbered_barbers_dataset_proper';
+  // Schema version management to seamlessly reload the new mock dataset and admin name
+  const DATA_VERSION = 'v5_blackbox_admin';
   useEffect(() => {
     const storedVersion = localStorage.getItem('bb_data_version');
     if (storedVersion !== DATA_VERSION) {
       localStorage.setItem('bb_data_version', DATA_VERSION);
+      localStorage.removeItem('bb_auth_user');
       localStorage.removeItem('bb_barbers');
       localStorage.removeItem('bb_services');
       localStorage.removeItem('bb_bookings');
@@ -196,7 +197,18 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 1. Auth state with persistence
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => {
     const saved = localStorage.getItem('bb_auth_user');
-    return saved ? JSON.parse(saved) : DEFAULT_ADMIN;
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (parsed.role === 'admin') {
+          return DEFAULT_ADMIN;
+        }
+        return parsed;
+      } catch {
+        return DEFAULT_ADMIN;
+      }
+    }
+    return DEFAULT_ADMIN;
   });
 
   useEffect(() => {
