@@ -431,60 +431,60 @@ export const BarberDashboardView: React.FC = () => {
               return (
                 <div
                   key={apt.id}
-                  className={`card-executive p-4.5 space-y-3 transition-all ${
-                    isArrived ? 'border-amber-500/50 bg-[var(--bg-card-hover)]' : ''
+                  className={`card-executive p-4 sm:p-5 space-y-3.5 transition-all ${
+                    isArrived ? 'border-amber-500/50 bg-[var(--bg-card-hover)] ring-1 ring-amber-500/20' : ''
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <span className="px-2 py-0.5 rounded bg-[var(--bg-subtle)] font-mono text-xs font-bold text-[var(--text-main)] border border-[var(--border-subtle)]">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 rounded-md bg-[var(--bg-subtle)] font-mono text-xs font-bold text-[var(--text-main)] border border-[var(--border-subtle)]">
                         {apt.ticketNumber}
                       </span>
-                      <span className="text-xs font-mono font-bold text-[#D4AF37] flex items-center gap-1">
+                      <span className="text-xs font-mono font-bold text-[#D4AF37] flex items-center gap-1 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
                         <Clock className="w-3.5 h-3.5" />
                         {apt.time}
                       </span>
-                      <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] px-1.5 py-0.2 rounded bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
+                      <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] px-2 py-0.5 rounded-md bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
                         {apt.type}
                       </span>
                     </div>
 
                     {isScheduled && (
-                      <span className="badge-status badge-neutral">
+                      <span className="badge-status badge-neutral text-xs">
                         Awaiting Customer Arrival
                       </span>
                     )}
                     {isArrived && (
-                      <span className="badge-status badge-amber animate-pulse">
+                      <span className="badge-status badge-amber text-xs animate-pulse">
                         ● In Chair / Arrived
                       </span>
                     )}
                   </div>
 
-                  <div className="flex items-start justify-between border-t border-[var(--border-subtle)] pt-2.5">
-                    <div>
-                      <h4 className="font-bold text-base text-[var(--text-main)]">{apt.customerName}</h4>
-                      <p className="text-xs text-[var(--text-muted)] mt-0.5">{apt.serviceName}</p>
+                  <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-3">
+                    <div className="min-w-0 pr-4">
+                      <h4 className="font-bold text-base text-[var(--text-main)] truncate">{apt.customerName}</h4>
+                      <p className="text-xs text-[var(--text-muted)] mt-0.5 truncate">{apt.serviceName}</p>
                     </div>
 
-                    <div className="text-right">
-                      <span className="text-sm font-black text-[var(--text-main)] font-mono block">
+                    <div className="text-right shrink-0">
+                      <span className="text-base font-black text-[var(--text-main)] font-mono block">
                         ₾{apt.price} GEL
                       </span>
-                      <span className="text-[11px] font-bold text-emerald-500 dark:text-emerald-400">
+                      <span className="text-xs font-bold text-emerald-500 dark:text-emerald-400 block mt-0.5">
                         Your 50%: ₾{(apt.price * 0.5).toFixed(1)} GEL
                       </span>
                     </div>
                   </div>
 
                   {/* Direct Chair Action Stepper */}
-                  <div className="pt-2 border-t border-[var(--border-subtle)]">
+                  <div className="pt-3 border-t border-[var(--border-subtle)]">
                     {isScheduled && (
-                      <div className="flex items-center justify-between">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <span className="text-xs text-[var(--text-muted)]">Customer arrived at your chair?</span>
                         <button
                           onClick={() => markCustomerArrived(apt.id)}
-                          className="btn-primary-gold text-xs py-1.5 px-3"
+                          className="btn-primary-gold text-xs py-2 px-4 font-bold active:scale-95 transition-all self-end sm:self-auto"
                         >
                           Mark Arrived
                         </button>
@@ -492,21 +492,21 @@ export const BarberDashboardView: React.FC = () => {
                     )}
 
                     {isArrived && (
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
                         <span className="text-xs font-semibold text-amber-500 dark:text-amber-400">
                           Haircut finished? Record payment:
                         </span>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => completeService(apt.id, 'cash')}
-                            className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1 shadow-sm transition-all"
+                            className="px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
                           >
                             <Banknote className="w-3.5 h-3.5" />
                             <span>Cash (₾{apt.price})</span>
                           </button>
                           <button
                             onClick={() => completeService(apt.id, 'card')}
-                            className="px-3 py-1.5 rounded-lg bg-[#18181B] dark:bg-[#27272A] border border-[#D4AF37] text-[#D4AF37] font-bold text-xs flex items-center gap-1 shadow-sm transition-all"
+                            className="px-3.5 py-2 rounded-lg bg-[#18181B] dark:bg-[#27272A] border border-[#D4AF37] text-[#D4AF37] font-bold text-xs flex items-center gap-1.5 shadow-sm active:scale-95 transition-all"
                           >
                             <CreditCard className="w-3.5 h-3.5" />
                             <span>Card (₾{apt.price})</span>
