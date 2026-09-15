@@ -113,66 +113,66 @@ export const FinanceView: React.FC = () => {
         </div>
       </div>
 
-      {/* 4 Essential Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* 4 Essential Metric Cards (2x2 Grid on Mobile, 4 Cols on Desktop) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         
         {/* 1. Revenue */}
-        <div className="card-executive p-5">
+        <div className="card-executive p-3.5 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Revenue</span>
-            <span className="badge-status badge-gold">Gross</span>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Revenue</span>
+            <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-1.5 py-0.5">Gross</span>
           </div>
-          <div className="mt-3 flex items-baseline gap-1.5">
-            <span className="text-3xl font-black text-[var(--text-main)] font-mono">₾{todayRevenue.toFixed(2)}</span>
-            <span className="text-xs font-bold text-[#D4AF37]">GEL</span>
+          <div className="mt-2 sm:mt-3 flex items-baseline gap-1">
+            <span className="text-xl sm:text-3xl font-black text-[var(--text-main)] font-mono">₾{todayRevenue.toFixed(2)}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-[#D4AF37]">GEL</span>
           </div>
-          <div className="mt-2 text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-2">
+          <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-1.5 sm:pt-2 truncate">
             {branchRevenueRecords.length} completed transactions
           </div>
         </div>
 
         {/* 2. Expenses */}
-        <div className="card-executive p-5">
+        <div className="card-executive p-3.5 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Expenses</span>
-            <span className="badge-status badge-red">Shop Costs</span>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Expenses</span>
+            <span className="badge-status badge-red text-[9px] sm:text-[10px] px-1.5 py-0.5">Costs</span>
           </div>
-          <div className="mt-3 flex items-baseline gap-1.5">
-            <span className="text-3xl font-black text-rose-500 dark:text-rose-400 font-mono">₾{totalExpenses.toFixed(2)}</span>
-            <span className="text-xs font-bold text-rose-500 dark:text-rose-400">GEL</span>
+          <div className="mt-2 sm:mt-3 flex items-baseline gap-1">
+            <span className="text-xl sm:text-3xl font-black text-rose-500 dark:text-rose-400 font-mono">₾{totalExpenses.toFixed(2)}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-rose-500 dark:text-rose-400">GEL</span>
           </div>
-          <div className="mt-2 text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-2">
-            Business, barber, customer & operational
+          <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-1.5 sm:pt-2 truncate">
+            All categorized costs
           </div>
         </div>
 
         {/* 3. Barber Withdrawals */}
-        <div className="card-executive p-5">
+        <div className="card-executive p-3.5 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Barber Withdrawals</span>
-            <span className="badge-status badge-amber">Advances</span>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Advances</span>
+            <span className="badge-status badge-amber text-[9px] sm:text-[10px] px-1.5 py-0.5">Staff</span>
           </div>
-          <div className="mt-3 flex items-baseline gap-1.5">
-            <span className="text-3xl font-black text-amber-500 dark:text-amber-400 font-mono">₾{totalWithdrawals.toFixed(2)}</span>
-            <span className="text-xs font-bold text-amber-500 dark:text-amber-400">GEL</span>
+          <div className="mt-2 sm:mt-3 flex items-baseline gap-1">
+            <span className="text-xl sm:text-3xl font-black text-amber-500 dark:text-amber-400 font-mono">₾{totalWithdrawals.toFixed(2)}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-amber-500 dark:text-amber-400">GEL</span>
           </div>
-          <div className="mt-2 text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-2">
-            Midday cash advances drawn from drawer
+          <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-1.5 sm:pt-2 truncate">
+            Midday advances drawn
           </div>
         </div>
 
         {/* 4. Net Profit */}
-        <div className="card-executive p-5">
+        <div className="card-executive p-3.5 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Net Profit</span>
-            <span className="badge-status badge-neutral">Profit</span>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Net Profit</span>
+            <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-1.5 py-0.5">Profit</span>
           </div>
-          <div className="mt-3 flex items-baseline gap-1.5">
-            <span className="text-3xl font-black text-emerald-500 dark:text-emerald-400 font-mono">₾{netProfit.toFixed(2)}</span>
-            <span className="text-xs font-bold text-emerald-500 dark:text-emerald-400">GEL</span>
+          <div className="mt-2 sm:mt-3 flex items-baseline gap-1">
+            <span className="text-xl sm:text-3xl font-black text-emerald-500 dark:text-emerald-400 font-mono">₾{netProfit.toFixed(2)}</span>
+            <span className="text-[10px] sm:text-xs font-bold text-emerald-500 dark:text-emerald-400">GEL</span>
           </div>
-          <div className="mt-2 text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-2">
-            Revenue minus operational expenses
+          <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-1.5 sm:pt-2 truncate">
+            Net cash retained
           </div>
         </div>
 
@@ -463,8 +463,8 @@ export const FinanceView: React.FC = () => {
 
       {/* MODAL 1: ADD EXPENSE */}
       {showExpenseModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scale-in">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4 animate-scale-in max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-rose-500/10 text-rose-500">
@@ -549,8 +549,8 @@ export const FinanceView: React.FC = () => {
 
       {/* MODAL 2: DISBURSE BARBER ADVANCE */}
       {showWithdrawalModal && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4 animate-scale-in">
+        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-card)] rounded-2xl max-w-md w-full p-4 sm:p-6 shadow-2xl space-y-4 animate-scale-in max-h-[92vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">

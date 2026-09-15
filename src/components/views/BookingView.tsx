@@ -63,6 +63,7 @@ export const BookingView: React.FC = () => {
 
   // View Mode: Kanban vs Table
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
+  const [mobileKanbanStage, setMobileKanbanStage] = useState<'all' | 'Scheduled' | 'Arrived' | 'In Service' | 'Completed'>('all');
 
   // Booking Modal State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -423,7 +424,65 @@ export const BookingView: React.FC = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {/* Mobile Stage Selector Pill Tabs (Visible on mobile/tablet < md) */}
+          <div className="md:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+            <button
+              onClick={() => setMobileKanbanStage('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                mobileKanbanStage === 'all'
+                  ? 'bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/50 shadow-xs'
+                  : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
+              }`}
+            >
+              All (Swipe)
+            </button>
+            <button
+              onClick={() => setMobileKanbanStage('Scheduled')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${
+                mobileKanbanStage === 'Scheduled'
+                  ? 'bg-[#18181B] dark:bg-[#27272A] text-white border border-[var(--border-card)] shadow-xs'
+                  : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
+              }`}
+            >
+              <span>1. Sched</span>
+              <span className="text-[10px] font-mono px-1 rounded bg-[var(--bg-card)] text-[var(--text-dim)]">{scheduledList.length}</span>
+            </button>
+            <button
+              onClick={() => setMobileKanbanStage('Arrived')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${
+                mobileKanbanStage === 'Arrived'
+                  ? 'bg-amber-500/20 text-amber-500 border border-amber-500/40 shadow-xs'
+                  : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
+              }`}
+            >
+              <span>2. Arrived</span>
+              <span className="text-[10px] font-mono px-1 rounded bg-[var(--bg-card)] text-amber-500">{arrivedList.length}</span>
+            </button>
+            <button
+              onClick={() => setMobileKanbanStage('In Service')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${
+                mobileKanbanStage === 'In Service'
+                  ? 'bg-blue-500/20 text-blue-500 border border-blue-500/40 shadow-xs'
+                  : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
+              }`}
+            >
+              <span>3. In Chair</span>
+              <span className="text-[10px] font-mono px-1 rounded bg-[var(--bg-card)] text-blue-500">{inServiceList.length}</span>
+            </button>
+            <button
+              onClick={() => setMobileKanbanStage('Completed')}
+              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${
+                mobileKanbanStage === 'Completed'
+                  ? 'bg-emerald-500/20 text-emerald-500 border border-emerald-500/40 shadow-xs'
+                  : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
+              }`}
+            >
+              <span>4. Done</span>
+              <span className="text-[10px] font-mono px-1 rounded bg-[var(--bg-card)] text-emerald-500">{completedList.length}</span>
+            </button>
+          </div>
+
+          <div className="flex md:grid md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
             
             {/* COLUMN 1: SCHEDULED */}
             <div 
@@ -431,6 +490,12 @@ export const BookingView: React.FC = () => {
               onDragLeave={handleColDragLeave}
               onDrop={(e) => handleColDrop(e, 'Scheduled')}
               className={`kanban-col space-y-3 transition-all duration-200 ${
+                mobileKanbanStage === 'all'
+                  ? 'w-[84vw] sm:w-[320px] md:w-auto shrink-0 snap-center'
+                  : mobileKanbanStage === 'Scheduled'
+                    ? 'w-full'
+                    : 'hidden md:block md:w-auto'
+              } ${
                 dragOverCol === 'Scheduled' ? 'is-drag-over' : ''
               }`}
             >
@@ -556,6 +621,12 @@ export const BookingView: React.FC = () => {
               onDragLeave={handleColDragLeave}
               onDrop={(e) => handleColDrop(e, 'Arrived')}
               className={`kanban-col space-y-3 bg-[var(--bg-subtle)] border-amber-500/30 transition-all duration-200 ${
+                mobileKanbanStage === 'all'
+                  ? 'w-[84vw] sm:w-[320px] md:w-auto shrink-0 snap-center'
+                  : mobileKanbanStage === 'Arrived'
+                    ? 'w-full'
+                    : 'hidden md:block md:w-auto'
+              } ${
                 dragOverCol === 'Arrived' ? 'is-drag-over' : ''
               }`}
             >
@@ -656,6 +727,12 @@ export const BookingView: React.FC = () => {
               onDragLeave={handleColDragLeave}
               onDrop={(e) => handleColDrop(e, 'In Service')}
               className={`kanban-col space-y-3 bg-[var(--bg-subtle)] border-blue-500/30 transition-all duration-200 ${
+                mobileKanbanStage === 'all'
+                  ? 'w-[84vw] sm:w-[320px] md:w-auto shrink-0 snap-center'
+                  : mobileKanbanStage === 'In Service'
+                    ? 'w-full'
+                    : 'hidden md:block md:w-auto'
+              } ${
                 dragOverCol === 'In Service' ? 'is-drag-over' : ''
               }`}
             >
@@ -765,6 +842,12 @@ export const BookingView: React.FC = () => {
               onDragLeave={handleColDragLeave}
               onDrop={(e) => handleColDrop(e, 'Completed')}
               className={`kanban-col space-y-3 bg-[var(--bg-subtle)] border-emerald-500/30 transition-all duration-200 ${
+                mobileKanbanStage === 'all'
+                  ? 'w-[84vw] sm:w-[320px] md:w-auto shrink-0 snap-center'
+                  : mobileKanbanStage === 'Completed'
+                    ? 'w-full'
+                    : 'hidden md:block md:w-auto'
+              } ${
                 dragOverCol === 'Completed' ? 'is-drag-over' : ''
               }`}
             >
