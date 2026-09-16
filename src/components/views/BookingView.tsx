@@ -1,16 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { useCash, isCompletedStatus, isArrivedStatus, isInServiceStatus, isScheduledStatus, isNoShowStatus, isCancelledStatus, isRescheduledStatus } from '../../context/CashContext';
+import { STUDENT_DISCOUNT_PERCENT, DEFAULT_COMMISSION_RATE, calcStudentDiscount, calcNetPrice, formatAmount } from '../../constants';
 import { 
   Calendar, 
   Clock, 
   Scissors, 
-  User, 
   CheckCircle2, 
   AlertCircle, 
   ArrowRight, 
   CreditCard,
-  Banknote,
-  CalendarCheck,
+  Banknote, 
   Kanban,
   List,
   Plus,
@@ -21,11 +20,9 @@ import {
   PhoneCall,
   MessageSquare,
   Footprints,
-  UserCheck,
-  XCircle,
-  RotateCcw
+  XCircle
 } from 'lucide-react';
-import { BookingAppointment, BookingSource, BookingStatus } from '../../types';
+import { BookingAppointment, BookingSource } from '../../types';
 
 const InstagramIcon = () => (
   <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -51,20 +48,23 @@ const SOURCES: BookingSource[] = [
 export const BookingView: React.FC = () => {
   const { 
     branchBarbers, 
+    barbers,
     services, 
     branchBookings, 
     createBooking, 
+    addWalkIn,
     markCustomerArrived, 
     markCustomerInService,
     markNoShow,
     completeService,
     updateBookingStatus,
-    cancelBooking
+    cancelBooking,
+    t
   } = useCash();
 
   // View Mode: Kanban vs Table
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
-  const [mobileKanbanStage, setMobileKanbanStage] = useState<'all' | 'Scheduled' | 'Arrived' | 'In Service' | 'Completed'>('all');
+  const [mobileKanbanStage, setMobileKanbanStage] = useState<'all' | 'Scheduled' | 'Arrived' | 'Completed'>('all');
 
   // Booking Modal State
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -85,8 +85,38 @@ export const BookingView: React.FC = () => {
   // Show exception drawer
   const [showExceptions, setShowExceptions] = useState(false);
 
+  // Quick Walk-In Modal State
+  const [isWalkInOpen, setIsWalkInOpen] = useState(false);
+  const [walkInName, setWalkInName] = useState('');
+  const [walkInBarberId, setWalkInBarberId] = useState(branchBarbers[0]?.id || '');
+  const [walkInServiceId, setWalkInServiceId] = useState(services[0]?.id || '');
+  const [walkInIsStudent, setWalkInIsStudent] = useState(false);
+
+  const handleWalkInSubmit = (paymentMethod: 'cash' | 'card') => {
+    if (!walkInName.trim()) {
+      setErrorMessage('Please enter the customer name.');
+      return;
+    }
+    const service = services.find((s) => s.id === walkInServiceId);
+    const barber = branchBarbers.find((b) => b.id === walkInBarberId);
+    addWalkIn({
+      customerName: walkInName.trim(),
+      barberId: walkInBarberId,
+      serviceId: walkInServiceId,
+      paymentMethod,
+      source: 'Walk-in',
+      isStudent: walkInIsStudent,
+    });
+    const price = service?.price ?? 0;
+    const finalPrice = walkInIsStudent ? calcNetPrice(price, true) : price;
+    setSuccessMessage(`✓ Walk-in completed for ${walkInName.trim()} — ₾${(finalPrice).toFixed(2)} GEL (${paymentMethod}) with ${barber?.name || 'Barber'}`);
+    setIsWalkInOpen(false);
+    setWalkInName('');
+    setWalkInIsStudent(false);
+    setTimeout(() => setSuccessMessage(null), 4500);
+  };
+
   const activeBarber = branchBarbers.find((b) => b.id === selectedBarberId) || branchBarbers[0];
-  const activeService = services.find((s) => s.id === selectedServiceId) || services[0];
 
   // Calculate barber availability across today's slots
   const barberAvailability = useMemo(() => {
@@ -104,10 +134,9 @@ export const BookingView: React.FC = () => {
     return map;
   }, [branchBookings, selectedBarberId]);
 
-  // 4 Core Kanban Pipeline Categories
+  // 3 Core Pipeline Categories (Scheduled -> Arrived -> Completed)
   const scheduledList = useMemo(() => branchBookings.filter((b) => isScheduledStatus(b.status)), [branchBookings]);
-  const arrivedList = useMemo(() => branchBookings.filter((b) => isArrivedStatus(b.status)), [branchBookings]);
-  const inServiceList = useMemo(() => branchBookings.filter((b) => isInServiceStatus(b.status)), [branchBookings]);
+  const arrivedList = useMemo(() => branchBookings.filter((b) => isArrivedStatus(b.status) || isInServiceStatus(b.status)), [branchBookings]);
   const completedList = useMemo(() => branchBookings.filter((b) => isCompletedStatus(b.status)), [branchBookings]);
 
   // Exception lists
@@ -117,12 +146,11 @@ export const BookingView: React.FC = () => {
 
   const scheduledValue = scheduledList.reduce((sum, b) => sum + b.price, 0);
   const arrivedValue = arrivedList.reduce((sum, b) => sum + b.price, 0);
-  const inServiceValue = inServiceList.reduce((sum, b) => sum + b.price, 0);
   const completedValue = completedList.reduce((sum, b) => sum + b.price, 0);
 
   // Drag and Drop States
   const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [dragOverCol, setDragOverCol] = useState<'Scheduled' | 'Arrived' | 'In Service' | 'Completed' | null>(null);
+  const [dragOverCol, setDragOverCol] = useState<'Scheduled' | 'Arrived' | 'Completed' | null>(null);
   const [paymentModalBooking, setPaymentModalBooking] = useState<BookingAppointment | null>(null);
 
   const handleCardDragStart = (e: React.DragEvent, id: string) => {
@@ -136,7 +164,7 @@ export const BookingView: React.FC = () => {
     setDragOverCol(null);
   };
 
-  const handleColDragOver = (e: React.DragEvent, col: 'Scheduled' | 'Arrived' | 'In Service' | 'Completed') => {
+  const handleColDragOver = (e: React.DragEvent, col: 'Scheduled' | 'Arrived' | 'Completed') => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
     if (dragOverCol !== col) {
@@ -150,7 +178,7 @@ export const BookingView: React.FC = () => {
     }
   };
 
-  const handleColDrop = (e: React.DragEvent, targetCol: 'Scheduled' | 'Arrived' | 'In Service' | 'Completed') => {
+  const handleColDrop = (e: React.DragEvent, targetCol: 'Scheduled' | 'Arrived' | 'Completed') => {
     e.preventDefault();
     setDragOverCol(null);
     const id = e.dataTransfer.getData('text/plain') || draggedId;
@@ -166,16 +194,9 @@ export const BookingView: React.FC = () => {
       return;
     }
 
-    if (targetCol === 'In Service') {
-      updateBookingStatus(id, 'In Service');
-      setSuccessMessage(`✓ ${booking.customerName} seated in chair (In Service).`);
-      setTimeout(() => setSuccessMessage(null), 3500);
-      return;
-    }
-
     if (targetCol === 'Arrived') {
       updateBookingStatus(id, 'Arrived');
-      setSuccessMessage(`✓ ${booking.customerName} marked Arrived in Lobby.`);
+      setSuccessMessage(`✓ ${booking.customerName} marked Arrived.`);
       setTimeout(() => setSuccessMessage(null), 3500);
       return;
     }
@@ -213,7 +234,10 @@ export const BookingView: React.FC = () => {
     if (!result.success) {
       setErrorMessage(result.error || 'Slot conflict detected.');
     } else {
-      const priceText = isStudent ? '36 GEL (20% Student Discount applied)' : '45 GEL';
+      const service = services.find((s) => s.id === selectedServiceId);
+      const basePrice = service?.price ?? 0;
+      const actualPrice = isStudent ? calcNetPrice(basePrice, true) : basePrice;
+      const priceText = isStudent ? `${(actualPrice || 0).toFixed(2)} GEL (${STUDENT_DISCOUNT_PERCENT}% Student Discount applied)` : `${(basePrice || 0).toFixed(2)} GEL`;
       setSuccessMessage(`✓ Appointment reserved for ${customerName.trim()} at ${selectedTime}! (${priceText})`);
       setIsBookingOpen(false);
       setCustomerName('');
@@ -254,10 +278,10 @@ export const BookingView: React.FC = () => {
             </div>
             <div>
               <h2 className="text-sm font-black uppercase tracking-wider text-[var(--text-main)] flex items-center gap-2">
-                Client Appointment Pipeline
+                {t('book.pipelineTitle', 'Client Appointment Pipeline')}
               </h2>
               <p className="text-xs text-[var(--text-muted)]">
-                Live Appointment Board: Scheduled Bookings ➔ Client Check-In ➔ In Service ➔ Service Completion & Payment
+                {t('book.pipelineSubtitle', 'Live Appointment Board: Scheduled Bookings ➔ Client Check-In ➔ In Service ➔ Service Completion & Payment')}
               </p>
             </div>
           </div>
@@ -274,7 +298,7 @@ export const BookingView: React.FC = () => {
                 }`}
               >
                 <Kanban className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span>Kanban Board</span>
+                <span>{t('book.kanbanBoard', 'Kanban Board')}</span>
               </button>
 
               <button
@@ -286,7 +310,7 @@ export const BookingView: React.FC = () => {
                 }`}
               >
                 <List className="w-3.5 h-3.5 text-[#D4AF37]" />
-                <span>Table View</span>
+                <span>{t('book.tableView', 'Table View')}</span>
               </button>
             </div>
 
@@ -300,7 +324,16 @@ export const BookingView: React.FC = () => {
               }`}
             >
               <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
-              <span>Exceptions ({noShowList.length + cancelledList.length + rescheduledList.length})</span>
+              <span>{t('book.exceptions', 'Exceptions')} ({noShowList.length + cancelledList.length + rescheduledList.length})</span>
+            </button>
+
+            {/* Quick Walk-In Action Button */}
+            <button
+              onClick={() => setIsWalkInOpen(true)}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 shadow-xs active:scale-95 transition-all"
+            >
+              <Footprints className="w-4 h-4 text-amber-500" />
+              <span>{t('walkin.quickWalkIn', 'Quick Walk-In')}</span>
             </button>
 
             {/* Book Client Action Button */}
@@ -309,7 +342,7 @@ export const BookingView: React.FC = () => {
               className="btn-primary-gold text-xs py-2 px-3.5 flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
             >
               <Plus className="w-4 h-4" />
-              <span>Book Appointment</span>
+              <span>{t('book.bookAppointment', 'Book Appointment')}</span>
             </button>
           </div>
         </div>
@@ -332,10 +365,10 @@ export const BookingView: React.FC = () => {
           <div className="flex items-center justify-between border-b border-amber-500/20 pb-2">
             <h3 className="font-bold text-xs uppercase tracking-wider text-amber-500 flex items-center gap-2">
               <AlertTriangle className="w-4 h-4 text-amber-500" />
-              Appointment Exceptions & Status Ledger
+              {t('book.exceptionsTitle', 'Appointment Exceptions & Status Ledger')}
             </h3>
             <span className="text-[11px] text-[var(--text-muted)]">
-              No-show grace rule: 10 minutes past slot ➔ Flagged for No-Show
+              {t('book.noShowGraceRule', 'No-show grace rule: 10 minutes past slot ➔ Flagged for No-Show')}
             </span>
           </div>
 
@@ -343,11 +376,11 @@ export const BookingView: React.FC = () => {
             {/* No-Shows */}
             <div className="p-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold text-rose-500 uppercase">
-                <span>No-Show Records ({noShowList.length})</span>
-                <span className="badge-status badge-red">10m Grace Expired</span>
+                <span>{t('book.noShowRecords', 'No-Show Records')} ({noShowList.length})</span>
+                <span className="badge-status badge-red">{t('book.graceExpired', '10m Grace Expired')}</span>
               </div>
               {noShowList.length === 0 ? (
-                <div className="text-[11px] text-[var(--text-dim)] py-2 text-center">No no-shows today.</div>
+                <div className="text-[11px] text-[var(--text-dim)] py-2 text-center">{t('book.noNoShows', 'No no-shows today.')}</div>
               ) : (
                 noShowList.map((item) => (
                   <div key={item.id} className="p-2 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between">
@@ -359,7 +392,7 @@ export const BookingView: React.FC = () => {
                       onClick={() => updateBookingStatus(item.id, 'Scheduled')}
                       className="text-[10px] text-amber-500 hover:underline"
                     >
-                      Re-open
+                      {t('book.btn.reopen', 'Re-open')}
                     </button>
                   </div>
                 ))
@@ -369,10 +402,10 @@ export const BookingView: React.FC = () => {
             {/* Cancelled */}
             <div className="p-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold text-[var(--text-muted)] uppercase">
-                <span>Cancelled ({cancelledList.length})</span>
+                <span>{t('book.cancelledRecords', 'Cancelled Records')} ({cancelledList.length})</span>
               </div>
               {cancelledList.length === 0 ? (
-                <div className="text-[11px] text-[var(--text-dim)] py-2 text-center">No cancellations today.</div>
+                <div className="text-[11px] text-[var(--text-dim)] py-2 text-center">{t('book.noCancelled', 'No cancellations today.')}</div>
               ) : (
                 cancelledList.map((item) => (
                   <div key={item.id} className="p-2 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between">
@@ -381,12 +414,12 @@ export const BookingView: React.FC = () => {
                       <div className="text-[10px] text-[var(--text-dim)]">{item.time} • {item.barberName}</div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] text-rose-500 font-semibold">Cancelled</span>
+                      <span className="text-[10px] text-rose-500 font-semibold">{t('status.cancelled', 'Cancelled')}</span>
                       <button
                         onClick={() => updateBookingStatus(item.id, 'Scheduled')}
                         className="text-[10px] text-amber-500 hover:underline font-bold"
                       >
-                        Re-open
+                        {t('book.btn.reopen', 'Re-open')}
                       </button>
                     </div>
                   </div>
@@ -397,10 +430,10 @@ export const BookingView: React.FC = () => {
             {/* Rescheduled */}
             <div className="p-3 bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold text-[var(--text-muted)] uppercase">
-                <span>Rescheduled ({rescheduledList.length})</span>
+                <span>{t('book.rescheduledRecords', 'Rescheduled Records')} ({rescheduledList.length})</span>
               </div>
               {rescheduledList.length === 0 ? (
-                <div className="text-[11px] text-[var(--text-dim)] py-2 text-center">No reschedules today.</div>
+                <div className="text-[11px] text-[var(--text-dim)] py-2 text-center">{t('book.noRescheduled', 'No rescheduled appointments today.')}</div>
               ) : (
                 rescheduledList.map((item) => (
                   <div key={item.id} className="p-2 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between">
@@ -408,7 +441,7 @@ export const BookingView: React.FC = () => {
                       <div className="font-bold text-[var(--text-main)]">{item.customerName}</div>
                       <div className="text-[10px] text-[var(--text-dim)]">{item.time} • {item.barberName}</div>
                     </div>
-                    <span className="text-[10px] text-blue-500">Rescheduled</span>
+                    <span className="text-[10px] text-blue-500">{t('status.rescheduled', 'Rescheduled')}</span>
                   </div>
                 ))
               )}
@@ -424,16 +457,16 @@ export const BookingView: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-[var(--text-muted)]">
               <GripVertical className="w-4 h-4 text-[#D4AF37]" />
               <span>
-                <strong className="text-[var(--text-main)]">Drag & Drop Active:</strong> Move cards across stages: Scheduled ➔ Arrived ➔ In Service ➔ Completed.
+                <strong className="text-[var(--text-main)]">Pipeline Active:</strong> {t('book.pipelineSubtitle', 'Scheduled ➔ Arrived ➔ In Service ➔ Completed')}
               </span>
             </div>
             <span className="text-[11px] font-mono text-[var(--text-muted)] font-semibold flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Live Pipeline
+              {t('status.live', 'Live')}
             </span>
           </div>
 
-          {/* Mobile Stage Selector Pill Tabs (Visible on mobile/tablet < md) */}
+          {/* Mobile Stage Selector Pill Tabs */}
           <div className="md:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
             <button
               onClick={() => setMobileKanbanStage('all')}
@@ -443,7 +476,7 @@ export const BookingView: React.FC = () => {
                   : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
               }`}
             >
-              All (Swipe)
+              {t('branch.all', 'All')}
             </button>
             <button
               onClick={() => setMobileKanbanStage('Scheduled')}
@@ -453,7 +486,7 @@ export const BookingView: React.FC = () => {
                   : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
               }`}
             >
-              <span>1. Sched</span>
+              <span>{t('book.tab.scheduled', 'Scheduled')}</span>
               <span className="text-[10px] font-mono px-1 rounded bg-[var(--bg-card)] text-[var(--text-dim)]">{scheduledList.length}</span>
             </button>
             <button
@@ -464,19 +497,8 @@ export const BookingView: React.FC = () => {
                   : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
               }`}
             >
-              <span>2. Arrived</span>
+              <span>{t('status.arrived', 'Arrived')}</span>
               <span className="text-[10px] font-mono px-1 rounded bg-[var(--bg-card)] text-amber-500">{arrivedList.length}</span>
-            </button>
-            <button
-              onClick={() => setMobileKanbanStage('In Service')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap flex items-center gap-1 ${
-                mobileKanbanStage === 'In Service'
-                  ? 'bg-blue-500/20 text-blue-500 border border-blue-500/40 shadow-xs'
-                  : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
-              }`}
-            >
-              <span>3. In Chair</span>
-              <span className="text-[10px] font-mono px-1 rounded bg-[var(--bg-card)] text-blue-500">{inServiceList.length}</span>
             </button>
             <button
               onClick={() => setMobileKanbanStage('Completed')}
@@ -486,12 +508,12 @@ export const BookingView: React.FC = () => {
                   : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] border border-[var(--border-subtle)]'
               }`}
             >
-              <span>4. Done</span>
+              <span>{t('status.completed', 'Completed')}</span>
               <span className="text-[10px] font-mono px-1 rounded bg-[var(--bg-card)] text-emerald-500">{completedList.length}</span>
             </button>
           </div>
 
-          <div className="flex md:grid md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
+          <div className="flex md:grid md:grid-cols-3 gap-3 sm:gap-4 overflow-x-auto snap-x snap-mandatory pb-4 no-scrollbar -mx-3 px-3 sm:mx-0 sm:px-0">
             
             {/* COLUMN 1: SCHEDULED */}
             <div 
@@ -512,7 +534,7 @@ export const BookingView: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#71717A]"></span>
                   <h3 className="font-extrabold text-xs uppercase tracking-wider text-[var(--text-main)]">
-                    1. Scheduled
+                    {t('book.col.scheduled', '1. Scheduled Queue')}
                   </h3>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -520,21 +542,21 @@ export const BookingView: React.FC = () => {
                     {scheduledList.length}
                   </span>
                   <span className="text-[11px] font-mono text-[var(--text-muted)] font-semibold">
-                    ₾{scheduledValue}
+                    ₾{scheduledValue.toFixed(2)}
                   </span>
                 </div>
               </div>
 
               {dragOverCol === 'Scheduled' && (
                 <div className="p-3 text-center border-2 border-dashed border-[#D4AF37] rounded-xl bg-[#D4AF37]/10 text-xs text-[#D4AF37] font-bold animate-pulse">
-                  + Drop here to Queue
+                  + {t('book.dropToSchedule', 'Drop here to return to Scheduled')}
                 </div>
               )}
 
               <div className="space-y-3 min-h-[400px]">
                 {scheduledList.length === 0 ? (
                   <div className="p-8 text-center text-xs text-[var(--text-dim)] border border-dashed border-[var(--border-subtle)] rounded-xl">
-                    No scheduled bookings in queue.
+                    {t('book.noScheduled', 'No scheduled appointments in queue.')}
                   </div>
                 ) : (
                   scheduledList.map((item) => (
@@ -557,7 +579,7 @@ export const BookingView: React.FC = () => {
                             {item.time}
                           </span>
                           <span title="Drag card to move">
-                            <GripVertical className="w-3.5 h-3.5 text-[var(--text-dim)] group-hover:text-[#D4AF37] transition-colors cursor-grab active:cursor-grabbing" />
+                            <GripVertical className="w-3.5 h-3.5 text-[var(--text-dim)] group-hover:text-[var(--text-main)] transition-colors cursor-grab active:cursor-grabbing" />
                           </span>
                         </div>
                       </div>
@@ -574,14 +596,14 @@ export const BookingView: React.FC = () => {
                       {item.isStudent && (
                         <div className="flex items-center gap-1 text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-lg border border-[#D4AF37]/20">
                           <GraduationCap className="w-3.5 h-3.5 shrink-0" />
-                          <span>Student 20% Discount (-₾{item.discountAmount} GEL)</span>
+                          <span>{t('student.discount', 'Student 20% Discount')} (-₾{item.discountAmount.toFixed(2)} GEL)</span>
                         </div>
                       )}
 
                       {/* Allergies Notice */}
                       {item.allergies && item.allergies !== 'None' && (
                         <div className="text-[10px] text-rose-500 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
-                          Allergies: {item.allergies}
+                          {t('cust.th.allergies', 'Allergies')}: {item.allergies}
                         </div>
                       )}
 
@@ -590,13 +612,13 @@ export const BookingView: React.FC = () => {
                         <div className="p-2 rounded-lg bg-amber-500/15 border border-amber-500/30 text-[11px] text-amber-500 space-y-1">
                           <div className="flex items-center gap-1.5 font-bold">
                             <AlertTriangle className="w-3.5 h-3.5" />
-                            <span>10-min Grace Period Expired</span>
+                            <span>{t('book.graceExpired', '10m Grace Expired')}</span>
                           </div>
                           <button
                             onClick={() => markNoShow(item.id)}
                             className="w-full py-1 text-center font-black bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] transition-colors"
                           >
-                            Mark No-Show
+                            {t('book.btn.noShow', 'Mark No-Show')}
                           </button>
                         </div>
                       )}
@@ -605,27 +627,34 @@ export const BookingView: React.FC = () => {
                         <span className="text-[var(--text-muted)]">
                           Chair: <strong className="text-[var(--text-main)]">{item.barberName}</strong>
                         </span>
-                        <span className="font-mono font-black text-[var(--text-main)]">
-                          {item.originalPrice ? `₾${item.price} GEL` : 'Price TBD'}
+                        <span className="font-mono font-bold text-[var(--text-main)]">
+                          ₾{item.price.toFixed(2)} GEL
                         </span>
                       </div>
 
-                      {/* Actions: Customer Arrived & Cancel */}
-                      <div className="flex items-center gap-1.5 mt-1">
+                      {/* Fast Actions: Mark Arrived / No-Show / Cancel */}
+                      <div className="flex items-center gap-1.5 pt-1">
                         <button
                           onClick={() => markCustomerArrived(item.id)}
-                          className="flex-1 btn-primary-gold text-xs py-1.5 flex items-center justify-center gap-1.5 active:scale-[0.98] transition-transform"
+                          className="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-95"
                         >
-                          <span>Mark Arrived</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>{t('book.btn.markArrived', 'Check-In Client')}</span>
                         </button>
                         <button
-                          onClick={() => cancelBooking(item.id, 'Cancelled by Front Desk')}
-                          className="px-2.5 py-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-xs font-bold transition-all flex items-center gap-1 active:scale-95"
+                          onClick={() => markNoShow(item.id)}
+                          className="px-2.5 py-2 rounded-xl border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 text-xs font-bold transition-all flex items-center gap-1 active:scale-95"
+                          title="Mark client as No-show"
+                        >
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span>{t('book.btn.noShow', 'No-Show')}</span>
+                        </button>
+                        <button
+                          onClick={() => cancelBooking(item.id, 'Cancelled before check-in')}
+                          className="p-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-xs font-bold transition-all flex items-center justify-center active:scale-95"
                           title="Cancel Booking"
                         >
                           <XCircle className="w-3.5 h-3.5" />
-                          <span>Cancel</span>
                         </button>
                       </div>
                     </div>
@@ -634,7 +663,7 @@ export const BookingView: React.FC = () => {
               </div>
             </div>
 
-            {/* COLUMN 2: ARRIVED / LOBBY */}
+            {/* COLUMN 2: ARRIVED IN SHOP (READY FOR CHECKOUT) */}
             <div 
               onDragOver={(e) => handleColDragOver(e, 'Arrived')}
               onDragLeave={handleColDragLeave}
@@ -653,7 +682,7 @@ export const BookingView: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
                   <h3 className="font-extrabold text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400">
-                    2. Arrived (Lobby)
+                    {t('book.col.arrived', '2. Arrived & In Shop')}
                   </h3>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -661,21 +690,21 @@ export const BookingView: React.FC = () => {
                     {arrivedList.length}
                   </span>
                   <span className="text-[11px] font-mono text-[var(--text-muted)] font-semibold">
-                    ₾{arrivedValue}
+                    ₾{arrivedValue.toFixed(2)}
                   </span>
                 </div>
               </div>
 
               {dragOverCol === 'Arrived' && (
                 <div className="p-3 text-center border-2 border-dashed border-amber-500 rounded-xl bg-amber-500/10 text-xs text-amber-500 font-bold animate-pulse">
-                  + Drop here to Check-in Client
+                  + {t('book.dropToArrived', 'Drop here to mark Client Arrived')}
                 </div>
               )}
 
               <div className="space-y-3 min-h-[400px]">
                 {arrivedList.length === 0 ? (
                   <div className="p-8 text-center text-xs text-[var(--text-dim)] border border-dashed border-[var(--border-subtle)] rounded-xl">
-                    No clients waiting in the lobby.
+                    {t('book.noArrived', 'No clients currently in shop.')}
                   </div>
                 ) : (
                   arrivedList.map((item) => (
@@ -694,7 +723,7 @@ export const BookingView: React.FC = () => {
                         </span>
                         <div className="flex items-center gap-2">
                           <span className="badge-status badge-amber">
-                            ● In Lobby
+                            ● {t('status.arrived', 'In Shop')}
                           </span>
                           <span title="Drag card to move">
                             <GripVertical className="w-3.5 h-3.5 text-[var(--text-dim)] group-hover:text-amber-500 transition-colors cursor-grab active:cursor-grabbing" />
@@ -713,123 +742,7 @@ export const BookingView: React.FC = () => {
                       {item.isStudent && (
                         <div className="flex items-center gap-1 text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-lg border border-[#D4AF37]/20">
                           <GraduationCap className="w-3.5 h-3.5 shrink-0" />
-                          <span>Student 20% Discount (-₾{item.discountAmount} GEL)</span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center justify-between text-xs pt-2 border-t border-[var(--border-subtle)]">
-                        <span className="text-[var(--text-muted)]">
-                          Chair: <strong className="text-[var(--text-main)]">{item.barberName}</strong>
-                        </span>
-                        <span className="font-mono font-black text-amber-600 dark:text-amber-400 text-sm">
-                          ₾{item.price} GEL
-                        </span>
-                      </div>
-
-                      {/* Seat Client into Chair & Cancel */}
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          onClick={() => markCustomerInService(item.id)}
-                          className="flex-1 py-2 rounded-xl bg-[#D4AF37] hover:bg-[#c49f2f] text-black font-extrabold text-xs flex items-center justify-center gap-1.5 shadow transition-all active:scale-95"
-                        >
-                          <Scissors className="w-3.5 h-3.5" />
-                          <span>Seat in Chair</span>
-                        </button>
-                        <button
-                          onClick={() => cancelBooking(item.id, 'Cancelled in Lobby')}
-                          className="px-2.5 py-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 text-xs font-bold transition-all flex items-center gap-1 active:scale-95"
-                          title="Cancel Booking"
-                        >
-                          <XCircle className="w-3.5 h-3.5" />
-                          <span>Cancel</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* COLUMN 3: IN SERVICE / IN CHAIR */}
-            <div 
-              onDragOver={(e) => handleColDragOver(e, 'In Service')}
-              onDragLeave={handleColDragLeave}
-              onDrop={(e) => handleColDrop(e, 'In Service')}
-              className={`kanban-col space-y-3 bg-[var(--bg-subtle)] border-blue-500/30 transition-all duration-200 ${
-                mobileKanbanStage === 'all'
-                  ? 'w-[84vw] sm:w-[320px] md:w-auto shrink-0 snap-center'
-                  : mobileKanbanStage === 'In Service'
-                    ? 'w-full'
-                    : 'hidden md:block md:w-auto'
-              } ${
-                dragOverCol === 'In Service' ? 'is-drag-over' : ''
-              }`}
-            >
-              <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-pulse"></span>
-                  <h3 className="font-extrabold text-xs uppercase tracking-wider text-blue-500">
-                    3. In Service
-                  </h3>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-mono font-black px-2 py-0.5 rounded bg-[var(--bg-card)] border border-blue-500/40 text-blue-500">
-                    {inServiceList.length}
-                  </span>
-                  <span className="text-[11px] font-mono text-[var(--text-muted)] font-semibold">
-                    ₾{inServiceValue}
-                  </span>
-                </div>
-              </div>
-
-              {dragOverCol === 'In Service' && (
-                <div className="p-3 text-center border-2 border-dashed border-blue-500 rounded-xl bg-blue-500/10 text-xs text-blue-500 font-bold animate-pulse">
-                  + Drop here to start service
-                </div>
-              )}
-
-              <div className="space-y-3 min-h-[400px]">
-                {inServiceList.length === 0 ? (
-                  <div className="p-8 text-center text-xs text-[var(--text-dim)] border border-dashed border-[var(--border-subtle)] rounded-xl">
-                    No chairs actively in service right now.
-                  </div>
-                ) : (
-                  inServiceList.map((item) => (
-                    <div 
-                      key={item.id} 
-                      draggable={true}
-                      onDragStart={(e) => handleCardDragStart(e, item.id)}
-                      onDragEnd={handleCardDragEnd}
-                      className={`kanban-card p-4 space-y-3 border-blue-500/40 shadow-md relative group transition-all duration-200 ${
-                        draggedId === item.id ? 'is-dragging' : ''
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-blue-500/10 text-blue-500 border border-blue-500/30">
-                          {item.ticketNumber}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          <span className="badge-status badge-gold animate-pulse">
-                            ● Haircut Active
-                          </span>
-                          <span title="Drag card to move">
-                            <GripVertical className="w-3.5 h-3.5 text-[var(--text-dim)] group-hover:text-blue-500 transition-colors cursor-grab active:cursor-grabbing" />
-                          </span>
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-extrabold text-sm text-[var(--text-main)]">{item.customerName}</h4>
-                          {renderSourceBadge(item.source)}
-                        </div>
-                        <p className="text-xs text-[var(--text-muted)] mt-0.5">{item.serviceName}</p>
-                      </div>
-
-                      {item.isStudent && (
-                        <div className="flex items-center gap-1 text-[11px] font-bold text-[#D4AF37] bg-[#D4AF37]/10 px-2 py-1 rounded-lg border border-[#D4AF37]/20">
-                          <GraduationCap className="w-3.5 h-3.5 shrink-0" />
-                          <span>Student 20% Discount (-₾{item.discountAmount} GEL)</span>
+                          <span>{t('student.discount', 'Student 20% Discount')} (-₾{item.discountAmount.toFixed(2)} GEL)</span>
                         </div>
                       )}
 
@@ -837,30 +750,30 @@ export const BookingView: React.FC = () => {
                         <span className="text-[var(--text-muted)]">
                           Barber: <strong className="text-[var(--text-main)]">{item.barberName}</strong>
                         </span>
-                        <span className="font-mono font-black text-blue-500 text-sm">
-                          ₾{item.price} GEL
+                        <span className="font-mono font-black text-amber-600 dark:text-amber-400 text-sm">
+                          ₾{item.price.toFixed(2)} GEL
                         </span>
                       </div>
 
-                      {/* Checkout / Payment Buttons & Cancel */}
+                      {/* Direct Complete & Settle Action Buttons */}
                       <div className="pt-1 flex items-center gap-1.5">
                         <button
                           onClick={() => completeService(item.id, 'cash')}
-                          className="flex-1 px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-all active:scale-[0.98]"
+                          className="flex-1 px-2.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-all active:scale-[0.98]"
                         >
                           <Banknote className="w-3.5 h-3.5" />
-                          <span>Paid Cash</span>
+                          <span>{t('payment.cash', 'Paid Cash')}</span>
                         </button>
                         <button
                           onClick={() => completeService(item.id, 'card')}
-                          className="flex-1 px-2.5 py-1.5 rounded-lg bg-[#18181B] dark:bg-[#27272A] border border-[#D4AF37] text-[#D4AF37] font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-all hover:bg-[#27272A] active:scale-[0.98]"
+                          className="flex-1 px-2.5 py-2 rounded-xl bg-[#18181B] dark:bg-[#27272A] border border-[#D4AF37] text-[#D4AF37] font-bold text-xs flex items-center justify-center gap-1 shadow-sm transition-all hover:bg-[#27272A] active:scale-[0.98]"
                         >
                           <CreditCard className="w-3.5 h-3.5" />
-                          <span>Paid Card</span>
+                          <span>{t('payment.card', 'Paid Card')}</span>
                         </button>
                         <button
-                          onClick={() => cancelBooking(item.id, 'Cancelled during service')}
-                          className="p-1.5 rounded-lg border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-colors"
+                          onClick={() => cancelBooking(item.id, 'Cancelled in Shop')}
+                          className="p-2 rounded-xl border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 transition-colors"
                           title="Cancel booking"
                         >
                           <XCircle className="w-4 h-4" />
@@ -872,7 +785,7 @@ export const BookingView: React.FC = () => {
               </div>
             </div>
 
-            {/* COLUMN 4: COMPLETED & PAID */}
+            {/* COLUMN 3: COMPLETED & PAID */}
             <div 
               onDragOver={(e) => handleColDragOver(e, 'Completed')}
               onDragLeave={handleColDragLeave}
@@ -891,7 +804,7 @@ export const BookingView: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                   <h3 className="font-extrabold text-xs uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                    4. Completed & Paid
+                    {t('book.col.completed', '3. Completed & Paid')}
                   </h3>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -899,21 +812,21 @@ export const BookingView: React.FC = () => {
                     {completedList.length}
                   </span>
                   <span className="text-[11px] font-mono text-emerald-500 font-bold">
-                    +₾{completedValue}
+                    +₾{completedValue.toFixed(2)}
                   </span>
                 </div>
               </div>
 
               {dragOverCol === 'Completed' && (
                 <div className="p-3 text-center border-2 border-dashed border-emerald-500 rounded-xl bg-emerald-500/10 text-xs text-emerald-500 font-bold animate-pulse">
-                  + Drop here to Checkout & Record Revenue
+                  + {t('book.dropToComplete', 'Drop here to Complete & Settle')}
                 </div>
               )}
 
               <div className="space-y-3 min-h-[400px]">
                 {completedList.length === 0 ? (
                   <div className="p-8 text-center text-xs text-[var(--text-dim)] border border-dashed border-[var(--border-subtle)] rounded-xl">
-                    No completed haircuts yet today.
+                    {t('book.noCompleted', 'No completed appointments yet.')}
                   </div>
                 ) : (
                   completedList.map((item) => (
@@ -940,7 +853,7 @@ export const BookingView: React.FC = () => {
 
                       {item.isStudent && (
                         <div className="text-[10px] font-bold text-[#D4AF37]">
-                          ✓ Student 20% Applied (Charged ₾{item.price})
+                          ✓ {t('student.discount', 'Student 20% Discount')} (Charged ₾{item.price})
                         </div>
                       )}
 
@@ -952,7 +865,13 @@ export const BookingView: React.FC = () => {
                           <span className="font-mono font-black text-emerald-500 dark:text-emerald-400 text-sm block">
                             +₾{item.price.toFixed(2)} GEL
                           </span>
-                          <span className="text-[10px] text-[var(--text-dim)]">50% Barber: ₾{(item.price * 0.5).toFixed(2)}</span>
+                          <span className="text-[10px] text-[var(--text-dim)]">
+                            {(() => {
+                              const b = branchBarbers.find((bb) => bb.id === item.barberId);
+                              const rate = b ? b.commissionRate : DEFAULT_COMMISSION_RATE;
+                              return `${rate * 100}%: ₾${(item.price * rate).toFixed(2)}`;
+                            })()}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -970,16 +889,16 @@ export const BookingView: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-[var(--border-subtle)] text-[var(--text-dim)] uppercase text-[10px] tracking-wider">
-                  <th className="pb-3 font-bold">Ticket</th>
-                  <th className="pb-3 font-bold">Customer</th>
-                  <th className="pb-3 font-bold">Student</th>
-                  <th className="pb-3 font-bold">Source</th>
-                  <th className="pb-3 font-bold">Service</th>
-                  <th className="pb-3 font-bold">Barber</th>
-                  <th className="pb-3 font-bold">Slot Time</th>
-                  <th className="pb-3 font-bold">Price</th>
-                  <th className="pb-3 font-bold">Status</th>
-                  <th className="pb-3 font-bold text-right">Actions</th>
+                  <th className="pb-3 font-bold">{t('finance.th.ticket', 'Ticket')}</th>
+                  <th className="pb-3 font-bold">{t('cust.th.clientName', 'Customer')}</th>
+                  <th className="pb-3 font-bold">{t('cust.th.studentStatus', 'Student')}</th>
+                  <th className="pb-3 font-bold">{t('finance.th.channel', 'Source')}</th>
+                  <th className="pb-3 font-bold">{t('finance.th.service', 'Service')}</th>
+                  <th className="pb-3 font-bold">{t('finance.th.barber', 'Barber')}</th>
+                  <th className="pb-3 font-bold">{t('book.timeSlot', 'Slot Time')}</th>
+                  <th className="pb-3 font-bold">{t('book.price', 'Price')}</th>
+                  <th className="pb-3 font-bold">{t('book.status', 'Status')}</th>
+                  <th className="pb-3 font-bold text-right">{t('book.actions', 'Actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -994,7 +913,7 @@ export const BookingView: React.FC = () => {
                       {b.isStudent ? (
                         <span className="badge-status badge-gold">Yes (-20%)</span>
                       ) : (
-                        <span className="text-[var(--text-dim)]">No</span>
+                        <span className="text-[var(--text-dim)]">{t('cust.regular', 'Regular')}</span>
                       )}
                     </td>
                     <td className="py-3">{renderSourceBadge(b.source)}</td>
@@ -1002,7 +921,7 @@ export const BookingView: React.FC = () => {
                     <td className="py-3 font-semibold text-[var(--text-main)]">{b.barberName}</td>
                     <td className="py-3 font-mono text-[var(--text-main)]">{b.time}</td>
                     <td className="py-3 font-mono font-bold text-[var(--text-main)]">
-                      {b.originalPrice ? `₾${b.price}` : 'TBD'}
+                      {b.originalPrice ? `₾${b.price.toFixed(2)}` : 'TBD'}
                     </td>
                     <td className="py-3">
                       <span className={`badge-status ${
@@ -1018,68 +937,52 @@ export const BookingView: React.FC = () => {
                             onClick={() => markCustomerArrived(b.id)}
                             className="btn-primary-gold text-[10px] py-1 px-2"
                           >
-                            Arrived
+                            {t('book.btn.markArrived', 'Arrived')}
                           </button>
                           <button
                             onClick={() => markNoShow(b.id)}
                             className="text-[10px] text-amber-500 hover:underline px-1"
                           >
-                            No-Show
+                            {t('book.btn.noShow', 'No-Show')}
                           </button>
                           <button
                             onClick={() => cancelBooking(b.id, 'Cancelled in Table View')}
                             className="text-[10px] text-rose-500 hover:underline px-1 font-bold"
                           >
-                            Cancel
+                            {t('book.btn.cancel', 'Cancel')}
                           </button>
                         </div>
                       )}
-                      {isArrivedStatus(b.status) && (
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            onClick={() => markCustomerInService(b.id)}
-                            className="px-2 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-bold hover:bg-blue-500"
-                          >
-                            Seat in Chair
-                          </button>
-                          <button
-                            onClick={() => cancelBooking(b.id, 'Cancelled in Lobby')}
-                            className="text-[10px] text-rose-500 hover:underline px-1"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      )}
-                      {isInServiceStatus(b.status) && (
+                      {(isArrivedStatus(b.status) || isInServiceStatus(b.status)) && (
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => completeService(b.id, 'cash')}
                             className="px-2 py-1 bg-emerald-600 text-white rounded-lg text-[10px] font-bold hover:bg-emerald-500"
                           >
-                            Paid Cash
+                            {t('payment.cash', 'Paid Cash')}
                           </button>
                           <button
                             onClick={() => completeService(b.id, 'card')}
                             className="px-2 py-1 bg-[#18181B] dark:bg-[#27272A] border border-[#D4AF37] text-[#D4AF37] rounded-lg text-[10px] font-bold"
                           >
-                            Paid Card
+                            {t('payment.card', 'Paid Card')}
                           </button>
                           <button
-                            onClick={() => cancelBooking(b.id, 'Cancelled in Service')}
+                            onClick={() => cancelBooking(b.id, 'Cancelled in Shop')}
                             className="text-[10px] text-rose-500 hover:underline px-1"
                           >
-                            Cancel
+                            {t('book.btn.cancel', 'Cancel')}
                           </button>
                         </div>
                       )}
                       {isCancelledStatus(b.status) && (
                         <div className="flex items-center justify-end gap-1.5">
-                          <span className="text-[10px] text-rose-500 font-bold">Cancelled</span>
+                          <span className="text-[10px] text-rose-500 font-bold">{t('status.cancelled', 'Cancelled')}</span>
                           <button
                             onClick={() => updateBookingStatus(b.id, 'Scheduled')}
                             className="text-[10px] text-amber-500 hover:underline font-bold"
                           >
-                            Re-open
+                            {t('book.btn.reopen', 'Re-open')}
                           </button>
                         </div>
                       )}
@@ -1105,8 +1008,15 @@ export const BookingView: React.FC = () => {
                   <Calendar className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base text-[var(--text-main)]">Book Appointment</h3>
-                  <p className="text-xs text-[var(--text-muted)]">Core Service: Hair + Beard (45 GEL) with Student Discount support</p>
+                  <h3 className="font-extrabold text-base text-[var(--text-main)]">{t('book.modal.bookTitle', 'Create New Appointment Booking')}</h3>
+                  <p className="text-xs text-[var(--text-muted)]">
+                    {(() => {
+                      const service = services.find((s) => s.id === selectedServiceId);
+                      const name = service ? service.name : 'Unknown Service';
+                      const basePrice = service?.price ?? 0;
+                      return `Core Service: ${name} (${(basePrice).toFixed(2)} GEL) with Student Discount`;
+                    })()}
+                  </p>
                 </div>
               </div>
               <button
@@ -1126,7 +1036,7 @@ export const BookingView: React.FC = () => {
 
             <form onSubmit={handleBookingSubmit} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Customer Name *</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('book.modal.customerName', 'Customer Name *')}</label>
                 <input
                   type="text"
                   required
@@ -1138,7 +1048,7 @@ export const BookingView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Phone Number *</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('book.modal.customerPhone', 'Customer Phone *')}</label>
                 <input
                   type="tel"
                   required
@@ -1160,13 +1070,19 @@ export const BookingView: React.FC = () => {
                   />
                   <span className="flex items-center gap-1.5">
                     <GraduationCap className="w-4 h-4 text-[#D4AF37]" />
-                    Student Discount (20% Off: Hair + Beard = 36 GEL)
+                    {(() => {
+                      const service = services.find((s) => s.id === selectedServiceId);
+                      const name = service ? service.name : 'Service';
+                      const basePrice = service?.price ?? 0;
+                      const discounted = calcNetPrice(basePrice, true);
+                      return t('walkin.studentDiscount', `Student Discount (${STUDENT_DISCOUNT_PERCENT}% Off: ${name} = ${(discounted).toFixed(2)} GEL)`);
+                    })()}
                   </span>
                 </label>
 
                 {isStudent && (
                   <div className="pt-1.5 border-t border-[var(--border-subtle)] space-y-1 animate-in fade-in">
-                    <label className="block text-[11px] text-[var(--text-muted)] font-medium">Student ID Proof / Card #</label>
+                    <label className="block text-[11px] text-[var(--text-muted)] font-medium">{t('walkin.studentProof', 'Student ID Proof / Card #')}</label>
                     <input
                       type="text"
                       placeholder="e.g. TSU-2024-8192 or Iliauni Card"
@@ -1180,7 +1096,7 @@ export const BookingView: React.FC = () => {
 
               {/* Allergies */}
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Allergies / Special Instructions</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('walkin.allergies', 'Allergies / Special Notes')}</label>
                 <input
                   type="text"
                   placeholder="e.g. None, or Sensitive to alcohol aftershaves"
@@ -1192,7 +1108,7 @@ export const BookingView: React.FC = () => {
 
               {/* Booking Source */}
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Booking Source *</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('book.modal.bookingSource', 'Booking Channel / Source *')}</label>
                 <select
                   value={bookingSource}
                   onChange={(e) => setBookingSource(e.target.value as BookingSource)}
@@ -1206,7 +1122,7 @@ export const BookingView: React.FC = () => {
 
               {/* Select Barber */}
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Select Barber *</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('book.modal.selectBarber', 'Select Barber Station *')}</label>
                 <select
                   value={selectedBarberId}
                   onChange={(e) => setSelectedBarberId(e.target.value)}
@@ -1220,7 +1136,7 @@ export const BookingView: React.FC = () => {
 
               {/* Select Service */}
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Select Service *</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('book.modal.selectService', 'Select Service *')}</label>
                 <select
                   value={selectedServiceId}
                   onChange={(e) => setSelectedServiceId(e.target.value)}
@@ -1230,7 +1146,8 @@ export const BookingView: React.FC = () => {
                     if (s.isTbd || s.price === null) {
                       return <option key={s.id} value={s.id}>{s.name} — Price TBD ({s.duration} min)</option>;
                     }
-                    const priceDisplay = isStudent ? `₾${s.price - s.price * 0.2} GEL (Student -20%)` : `₾${s.price} GEL`;
+                    const discounted = calcNetPrice(s.price, true);
+                    const priceDisplay = isStudent ? `₾${discounted.toFixed(2)} GEL (Student -${STUDENT_DISCOUNT_PERCENT}%)` : `₾${s.price.toFixed(2)} GEL`;
                     return (
                       <option key={s.id} value={s.id}>
                         {s.name} — {priceDisplay} ({s.duration} min)
@@ -1243,7 +1160,7 @@ export const BookingView: React.FC = () => {
               {/* Time Slot Picker */}
               <div>
                 <label className="block text-[var(--text-muted)] font-semibold mb-1.5 flex items-center justify-between">
-                  <span>Select Time Slot *</span>
+                  <span>{t('book.modal.selectTimeSlot', 'Select Time Slot *')}</span>
                   <span className="text-[10px] text-[#D4AF37]">Based on {activeBarber?.name}'s availability</span>
                 </label>
                 <div className="grid grid-cols-4 gap-1.5">
@@ -1274,10 +1191,10 @@ export const BookingView: React.FC = () => {
 
               <div className="pt-2 flex justify-end gap-2 border-t border-[var(--border-subtle)]">
                 <button type="button" onClick={() => setIsBookingOpen(false)} className="btn-secondary">
-                  Cancel
+                  {t('action.cancel', 'Cancel')}
                 </button>
                 <button type="submit" className="btn-primary-gold">
-                  Confirm Booking {isStudent && '(36 GEL)'}
+                  {t('book.modal.confirmBooking', 'Confirm Appointment Booking')}
                 </button>
               </div>
             </form>
@@ -1295,7 +1212,7 @@ export const BookingView: React.FC = () => {
                   <CreditCard className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-base text-[var(--text-main)]">Collect Payment & Complete</h3>
+                  <h3 className="font-extrabold text-base text-[var(--text-main)]">{t('book.modal.completeTitle', 'Complete Service & Record Payment')}</h3>
                   <p className="text-xs text-[var(--text-muted)]">Record revenue & calculate barber earnings</p>
                 </div>
               </div>
@@ -1309,33 +1226,39 @@ export const BookingView: React.FC = () => {
 
             <div className="bg-[var(--bg-subtle)] p-4 rounded-xl space-y-2 border border-[var(--border-subtle)] text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-[var(--text-muted)]">Ticket:</span>
+                <span className="text-[var(--text-muted)]">{t('finance.th.ticket', 'Ticket')}:</span>
                 <span className="font-mono font-bold text-[var(--text-main)]">{paymentModalBooking.ticketNumber}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[var(--text-muted)]">Client:</span>
+                <span className="text-[var(--text-muted)]">{t('cust.th.clientName', 'Customer')}:</span>
                 <span className="font-bold text-[var(--text-main)]">{paymentModalBooking.customerName}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[var(--text-muted)]">Barber:</span>
+                <span className="text-[var(--text-muted)]">{t('finance.th.barber', 'Barber')}:</span>
                 <span className="font-bold text-[var(--text-main)]">{paymentModalBooking.barberName}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-[var(--text-muted)]">Service:</span>
+                <span className="text-[var(--text-muted)]">{t('finance.th.service', 'Service')}:</span>
                 <span className="font-bold text-[var(--text-main)]">{paymentModalBooking.serviceName}</span>
               </div>
               {paymentModalBooking.isStudent && (
                 <div className="flex items-center justify-between text-[#D4AF37]">
-                  <span>Student Discount (20%):</span>
+                  <span>{t('student.discount', 'Student 20% Discount')}:</span>
                   <span>-₾{paymentModalBooking.discountAmount} GEL</span>
                 </div>
               )}
               <div className="flex items-center justify-between border-t border-[var(--border-subtle)] pt-2.5 mt-2">
-                <span className="text-sm font-bold text-[var(--text-main)]">Total Due:</span>
+                <span className="text-sm font-bold text-[var(--text-main)]">{t('walkin.ticketTotal', 'Ticket Total:')}</span>
                 <span className="font-mono text-xl font-black text-[#D4AF37]">₾{paymentModalBooking.price.toFixed(2)} GEL</span>
               </div>
               <div className="text-[10px] text-[var(--text-dim)]">
-                50% Barber Cut: <strong>₾{(paymentModalBooking.price * 0.5).toFixed(2)} GEL</strong> will be credited to {paymentModalBooking.barberName}'s balance.
+                {(() => {
+                  const b = branchBarbers.find(bb => bb.id === paymentModalBooking.barberId);
+                  const rate = b ? b.commissionRate : DEFAULT_COMMISSION_RATE;
+                  return (
+                    <>{rate * 100}% Barber Cut: <strong>₾{(paymentModalBooking.price * rate).toFixed(2)} GEL</strong> will be credited to {paymentModalBooking.barberName}'s balance.</>
+                  );
+                })()}
               </div>
             </div>
 
@@ -1350,7 +1273,7 @@ export const BookingView: React.FC = () => {
                 className="p-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-2 shadow-md transition-all active:scale-95"
               >
                 <Banknote className="w-5 h-5" />
-                <span>Paid with Cash</span>
+                <span>{t('book.modal.confirmCash', 'Confirm Cash Payment')}</span>
               </button>
 
               <button
@@ -1363,8 +1286,161 @@ export const BookingView: React.FC = () => {
                 className="p-3.5 rounded-xl bg-[#18181B] dark:bg-[#27272A] hover:bg-[#27272A] border border-[#D4AF37] text-[#D4AF37] font-bold text-xs flex flex-col items-center justify-center gap-2 shadow-md transition-all active:scale-95"
               >
                 <CreditCard className="w-5 h-5" />
-                <span>Paid with Card</span>
+                <span>{t('book.modal.confirmCard', 'Confirm Card Payment')}</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* QUICK WALK-IN MODAL */}
+      {/* ========================================================================= */}
+      {isWalkInOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50 animate-in fade-in duration-150">
+          <div className="bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+                  <Footprints className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base text-[var(--text-main)]">{t('walkin.quickWalkInTitle', 'Quick Walk-In Register')}</h3>
+                  <p className="text-xs text-[var(--text-muted)]">{t('walkin.instantCheckout', 'Immediate Chair Seating & Express Checkout')}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsWalkInOpen(false)}
+                className="p-1.5 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-subtle)] transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              {/* Customer Name */}
+              <div>
+                <label className="block text-xs font-bold text-[var(--text-main)] mb-1">
+                  {t('cust.th.clientName', 'Customer Name')} *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. David Melikidze"
+                  value={walkInName}
+                  onChange={(e) => setWalkInName(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-hidden focus:border-[#D4AF37] transition-all text-xs"
+                />
+              </div>
+
+              {/* Barber Selector */}
+              <div>
+                <label className="block text-xs font-bold text-[var(--text-main)] mb-1">
+                  {t('finance.th.barber', 'Assign Barber')} *
+                </label>
+                <select
+                  value={walkInBarberId}
+                  onChange={(e) => setWalkInBarberId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-main)] focus:outline-hidden focus:border-[#D4AF37] transition-all text-xs"
+                >
+                  {branchBarbers.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name} ({b.specialty}) • {Math.round(b.commissionRate * 100)}%
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Service Selector */}
+              <div>
+                <label className="block text-xs font-bold text-[var(--text-main)] mb-1">
+                  {t('finance.th.service', 'Select Service')} *
+                </label>
+                <select
+                  value={walkInServiceId}
+                  onChange={(e) => setWalkInServiceId(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-main)] focus:outline-hidden focus:border-[#D4AF37] transition-all text-xs"
+                >
+                  {services.map((s) => {
+                    const price = s.price !== null ? `₾${s.price.toFixed(2)} GEL` : 'Price TBD';
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {s.name} — {price} ({s.duration} min)
+                      </option>
+                    );
+                  })}
+                </select>
+              </div>
+
+              {/* Student Discount Checkbox */}
+              <div className="bg-[var(--bg-subtle)] p-3 rounded-xl border border-[var(--border-subtle)]">
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={walkInIsStudent}
+                    onChange={(e) => setWalkInIsStudent(e.target.checked)}
+                    className="w-4 h-4 rounded-md text-[#D4AF37] focus:ring-[#D4AF37]"
+                  />
+                  <div className="flex items-center gap-1.5 font-bold text-xs text-[var(--text-main)]">
+                    <GraduationCap className="w-4 h-4 text-[#D4AF37]" />
+                    <span>{t('walkin.studentDiscount', 'Student Discount')} ({STUDENT_DISCOUNT_PERCENT}% Off)</span>
+                  </div>
+                </label>
+              </div>
+
+              {/* Summary calculation card */}
+              {(() => {
+                const service = services.find((s) => s.id === walkInServiceId);
+                const barber = branchBarbers.find((b) => b.id === walkInBarberId);
+                const price = service?.price ?? 0;
+                const discount = walkInIsStudent ? calcStudentDiscount(price, true) : 0;
+                const finalPrice = walkInIsStudent ? calcNetPrice(price, true) : price;
+                const barberRate = barber ? barber.commissionRate : DEFAULT_COMMISSION_RATE;
+                const barberCut = finalPrice * barberRate;
+
+                return (
+                  <div className="bg-[var(--bg-subtle)] p-3.5 rounded-xl border border-[var(--border-subtle)] space-y-1.5">
+                    <div className="flex justify-between text-[var(--text-muted)]">
+                      <span>{t('walkin.basePrice', 'Service List Price')}:</span>
+                      <span>₾{price.toFixed(2)} GEL</span>
+                    </div>
+                    {walkInIsStudent && (
+                      <div className="flex justify-between text-[#D4AF37]">
+                        <span>{t('student.discount', 'Student Discount')} (-{STUDENT_DISCOUNT_PERCENT}%):</span>
+                        <span>-₾{discount.toFixed(2)} GEL</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm font-black text-[var(--text-main)] pt-1.5 border-t border-[var(--border-subtle)]">
+                      <span>{t('walkin.ticketTotal', 'Ticket Total:')}</span>
+                      <span className="text-[#D4AF37] font-mono text-base">₾{finalPrice.toFixed(2)} GEL</span>
+                    </div>
+                    <div className="text-[10px] text-[var(--text-dim)] pt-0.5">
+                      {Math.round(barberRate * 100)}% Barber Cut: <strong>₾{barberCut.toFixed(2)} GEL</strong> credited to {barber?.name || 'Barber'}.
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Immediate Payment Action Buttons */}
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => handleWalkInSubmit('cash')}
+                  className="p-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex flex-col items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
+                >
+                  <Banknote className="w-5 h-5" />
+                  <span>{t('walkin.instantCash', 'Collect Cash & Complete')}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleWalkInSubmit('card')}
+                  className="p-3 rounded-xl bg-[#18181B] dark:bg-[#27272A] hover:bg-[#27272A] border border-[#D4AF37] text-[#D4AF37] font-bold text-xs flex flex-col items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all"
+                >
+                  <CreditCard className="w-5 h-5" />
+                  <span>{t('walkin.instantCard', 'Charge Card & Complete')}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

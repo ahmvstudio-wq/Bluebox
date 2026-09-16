@@ -659,7 +659,11 @@ export const INITIAL_EXPENSES: Expense[] = [
     title: 'Barbicide Restock & Neck Strips', 
     amount: 45.00, 
     date: 'Today',
-    description: 'Sterilization solution and sanitary rolls for 6 chairs'
+    description: 'Sterilization solution and sanitary rolls for 6 chairs',
+    paymentSource: 'cash_drawer',
+    receiptNumber: 'INV-2026-9012',
+    allocatedBarberName: 'General Shop (All Staff)',
+    createdAt: 'Today, 09:15'
   },
   { 
     id: 'e2', 
@@ -668,7 +672,11 @@ export const INITIAL_EXPENSES: Expense[] = [
     title: 'Italian Espresso Beans & Mineral Water', 
     amount: 38.50, 
     date: 'Today',
-    description: 'Complimentary beverages served to waiting lounge clients'
+    description: 'Complimentary beverages served to waiting lounge clients',
+    paymentSource: 'cash_drawer',
+    receiptNumber: 'INV-2026-9014',
+    allocatedBarberName: 'General Shop (All Staff)',
+    createdAt: 'Today, 10:00'
   },
   { 
     id: 'e3', 
@@ -677,7 +685,11 @@ export const INITIAL_EXPENSES: Expense[] = [
     title: 'Shop Internet & Terminal Gateway Fee', 
     amount: 60.00, 
     date: 'Today',
-    description: 'High-speed fiber connectivity for POS systems'
+    description: 'High-speed fiber connectivity for POS systems',
+    paymentSource: 'bank_transfer',
+    receiptNumber: 'INV-2026-8831',
+    allocatedBarberName: 'General Shop (All Staff)',
+    createdAt: 'Today, 08:30'
   },
   { 
     id: 'e4', 
@@ -686,7 +698,12 @@ export const INITIAL_EXPENSES: Expense[] = [
     title: 'Wahl Clipper Blade Replacements', 
     amount: 55.00, 
     date: 'Today',
-    description: 'Ceramic blade sets distributed to stations'
+    description: 'Ceramic blade sets distributed to stations',
+    paymentSource: 'cash_drawer',
+    receiptNumber: 'INV-2026-9022',
+    allocatedBarberId: 'b1',
+    allocatedBarberName: 'Barber #1',
+    createdAt: 'Today, 11:20'
   },
   { 
     id: 'e5', 
@@ -695,7 +712,11 @@ export const INITIAL_EXPENSES: Expense[] = [
     title: 'Paper Towels & Cleaning Detergents', 
     amount: 25.00, 
     date: 'Today',
-    description: 'Station hygiene and floor sanitation'
+    description: 'Station hygiene and floor sanitation',
+    paymentSource: 'cash_drawer',
+    receiptNumber: 'INV-2026-9030',
+    allocatedBarberName: 'General Shop (All Staff)',
+    createdAt: 'Today, 10:45'
   },
   { 
     id: 'e6', 
@@ -704,7 +725,11 @@ export const INITIAL_EXPENSES: Expense[] = [
     title: 'Lounge Beverage Re-stock', 
     amount: 30.00, 
     date: 'Today',
-    description: 'Sparkling water & coffee pods'
+    description: 'Sparkling water & coffee pods',
+    paymentSource: 'cash_drawer',
+    receiptNumber: 'INV-2026-9041',
+    allocatedBarberName: 'General Shop (All Staff)',
+    createdAt: 'Today, 11:00'
   },
 ];
 

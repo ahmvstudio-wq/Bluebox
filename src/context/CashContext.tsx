@@ -8,6 +8,7 @@ import {
   Customer, 
   Expense, 
   ExpenseCategory,
+  ExpensePaymentSource,
   BarberWithdrawal,
   RevenueRecord,
   BookingStatus,
@@ -28,6 +29,8 @@ import {
   INITIAL_EXPENSES, 
   INITIAL_WITHDRAWALS 
 } from '../mockData';
+import { translations, Language } from '../i18n/translations';
+import { STUDENT_DISCOUNT_RATE, STUDENT_DISCOUNT_PERCENT, DEFAULT_COMMISSION_RATE, calcStudentDiscount, calcNetPrice } from '../constants';
 
 export interface BarberStats {
   barber: Barber;
@@ -47,6 +50,12 @@ interface CashContextType {
   loginAsAdmin: () => void;
   loginAsBarber: (barberId: string) => boolean;
   logout: () => void;
+
+  // Localization (English & Arabic with RTL)
+  language: Language;
+  setLanguage: (lang: Language) => void;
+  toggleLanguage: () => void;
+  t: (key: string, defaultVal?: string) => string;
 
   // Master Data
   currentBranch: BranchId;
@@ -78,6 +87,7 @@ interface CashContextType {
 
   // 6. Financial Overview Metrics (Admin View)
   totalExpenses: number;
+  totalCashExpenses: number;
   totalWithdrawals: number;
   netProfit: number;
   cashInDrawer: number;
@@ -131,12 +141,25 @@ interface CashContextType {
   }) => void;
 
   addExpense: (
-    title: string, 
-    amount: number, 
-    category?: ExpenseCategory, 
-    description?: string, 
-    branchId?: BranchId
+    titleOrData: string | {
+      title: string;
+      amount: number;
+      category?: ExpenseCategory;
+      description?: string;
+      branchId?: BranchId;
+      paymentSource?: ExpensePaymentSource;
+      receiptNumber?: string;
+      allocatedBarberId?: string;
+      allocatedBarberName?: string;
+    },
+    amount?: number,
+    category?: ExpenseCategory,
+    description?: string,
+    branchId?: BranchId,
+    paymentSource?: ExpensePaymentSource,
+    receiptNumber?: string
   ) => void;
+  deleteExpense: (id: string) => void;
   addWithdrawal: (barberId: string, amount: number, reason: string) => void;
   updateBarberCommission: (barberId: string, newRate: number, workingHours?: number) => void;
 
@@ -168,7 +191,7 @@ export const isCancelledStatus = (s: string) => s === 'Cancelled' || s === 'canc
 export const isRescheduledStatus = (s: string) => s === 'Rescheduled' || s === 'rescheduled';
 
 export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Theme state with HTML root class management
+  // 1. Theme state with HTML root class management
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
     const saved = localStorage.getItem('bb_theme');
     return (saved === 'light' || saved === 'dark') ? saved : 'dark';
@@ -190,8 +213,34 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
   };
 
+  // 2. Language State (English / Arabic) with RTL document direction support
+  const [language, setLanguageState] = useState<Language>(() => {
+    const saved = localStorage.getItem('bb_language');
+    return (saved === 'ar' || saved === 'en') ? saved : 'en';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('bb_language', language);
+    const root = document.documentElement;
+    root.lang = language;
+    root.dir = 'ltr'; // Keep layout consistent and un-mirrored across all languages
+  }, [language]);
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+  };
+
+  const toggleLanguage = () => {
+    setLanguageState((prev) => (prev === 'en' ? 'ar' : 'en'));
+  };
+
+  const t = (key: string, defaultVal?: string): string => {
+    const dict = translations[language] || translations.en;
+    return dict[key] || translations.en[key] || defaultVal || key;
+  };
+
   // Schema version management to seamlessly reload the new mock dataset and admin name
-  const DATA_VERSION = 'v6_blackbox_customers_date_filter';
+  const DATA_VERSION = 'v7_blackbox_expenses_arabic_payroll50';
   useEffect(() => {
     const storedVersion = localStorage.getItem('bb_data_version');
     if (storedVersion !== DATA_VERSION) {
@@ -431,13 +480,31 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return map;
   }, [completedBookings]);
 
+  // Commission Base Rule ('discounted' actual paid vs 'list_price' full gross)
+  // Moved above barberPerformanceList since both it and myTodayEarnings depend on this.
+  const [commissionBaseRule, setCommissionBaseRule] = useState<'discounted' | 'list_price'>(() => {
+    const saved = localStorage.getItem('bb_commission_base_rule');
+    return saved === 'list_price' ? 'list_price' : 'discounted';
+  });
+
+  const handleSetCommissionBaseRule = (rule: 'discounted' | 'list_price') => {
+    setCommissionBaseRule(rule);
+    localStorage.setItem('bb_commission_base_rule', rule);
+  };
+
   const barberPerformanceList: BarberStats[] = useMemo(() => {
     return branchBarbers.map((barber) => {
       const bCompleted = completedBookings.filter((b) => b.barberId === barber.id);
       const clientsServedToday = bCompleted.length;
       const servicesCompleted = clientsServedToday;
       const revenueGenerated = bCompleted.reduce((sum, b) => sum + b.price, 0);
-      const barberEarnings = revenueGenerated * barber.commissionRate;
+
+      // Commission base: use original (list) price when commissionBaseRule is 'list_price',
+      // otherwise use the discounted net price the customer actually paid.
+      const commissionBase = commissionBaseRule === 'list_price'
+        ? bCompleted.reduce((sum, b) => sum + (b.originalPrice || b.price), 0)
+        : revenueGenerated;
+      const barberEarnings = commissionBase * barber.commissionRate;
       const monthEarnings = barber.monthBaseEarnings + barberEarnings;
 
       const bWithdrawals = branchWithdrawals.filter((w) => w.barberId === barber.id);
@@ -456,10 +523,16 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
         remainingOwed,
       };
     });
-  }, [branchBarbers, completedBookings, branchWithdrawals]);
+  }, [branchBarbers, completedBookings, branchWithdrawals, commissionBaseRule]);
 
   const totalExpenses = useMemo(() => {
     return branchExpenses.reduce((sum, e) => sum + e.amount, 0);
+  }, [branchExpenses]);
+
+  const totalCashExpenses = useMemo(() => {
+    return branchExpenses
+      .filter((e) => e.paymentSource === 'cash_drawer' || !e.paymentSource)
+      .reduce((sum, e) => sum + e.amount, 0);
   }, [branchExpenses]);
 
   const expensesByCategory = useMemo(() => {
@@ -468,9 +541,11 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
       'Barber/worker': 0,
       'Customer-related': 0,
       'Operational': 0,
+      'Utilities': 0,
     };
     branchExpenses.forEach((e) => {
-      map[e.category] = (map[e.category] || 0) + e.amount;
+      const cat = e.category || 'Operational';
+      map[cat] = (map[cat] || 0) + e.amount;
     });
     return map;
   }, [branchExpenses]);
@@ -479,17 +554,21 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return branchWithdrawals.reduce((sum, w) => sum + w.amount, 0);
   }, [branchWithdrawals]);
 
+  const totalCommissionOwed = useMemo(() => {
+    return barberPerformanceList.reduce((sum, bp) => sum + bp.barberEarnings, 0);
+  }, [barberPerformanceList]);
+
   const netProfit = useMemo(() => {
-    return todayRevenue - totalExpenses;
-  }, [todayRevenue, totalExpenses]);
+    return todayRevenue - totalExpenses - totalCommissionOwed;
+  }, [todayRevenue, totalExpenses, totalCommissionOwed]);
 
   const activeBranchObj = branches.find((b) => b.id === currentBranch) || branches[0];
   const cashInDrawer = useMemo(() => {
     const cashIncome = completedBookings
       .filter((b) => b.paymentMethod === 'cash')
       .reduce((sum, b) => sum + b.price, 0);
-    return activeBranchObj.initialCashDrawer + cashIncome - totalExpenses - totalWithdrawals;
-  }, [activeBranchObj, completedBookings, totalExpenses, totalWithdrawals]);
+    return activeBranchObj.initialCashDrawer + cashIncome - totalCashExpenses - totalWithdrawals;
+  }, [activeBranchObj, completedBookings, totalCashExpenses, totalWithdrawals]);
 
   // 5. Personal Barber Context (Barber RBAC Mode)
   const currentBarber = useMemo(() => {
@@ -511,9 +590,11 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const myTodayEarnings = useMemo(() => {
     if (!currentBarber) return 0;
-    const gross = myCompletedAppointments.reduce((sum, b) => sum + b.price, 0);
-    return gross * currentBarber.commissionRate;
-  }, [myCompletedAppointments, currentBarber]);
+    const commissionBase = commissionBaseRule === 'list_price'
+      ? myCompletedAppointments.reduce((sum, b) => sum + (b.originalPrice || b.price), 0)
+      : myCompletedAppointments.reduce((sum, b) => sum + b.price, 0);
+    return commissionBase * (currentBarber.commissionRate || DEFAULT_COMMISSION_RATE);
+  }, [myCompletedAppointments, currentBarber, commissionBaseRule]);
 
   const myMonthEarnings = useMemo(() => {
     if (!currentBarber) return 0;
@@ -566,13 +647,13 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Student 20% discount calculation
     const originalPrice = service.price;
     const isStudent = !!data.isStudent;
-    const discountPercent = isStudent ? 20 : 0;
-    const discountAmount = isStudent && originalPrice ? originalPrice * 0.2 : 0;
-    const netPrice = originalPrice ? originalPrice - discountAmount : 0;
+    const discountPercent = isStudent ? STUDENT_DISCOUNT_PERCENT : 0;
+    const discountAmount = calcStudentDiscount(originalPrice, isStudent);
+    const netPrice = calcNetPrice(originalPrice, isStudent);
 
     const newBooking: BookingAppointment = {
       id: 'apt-' + Date.now(),
-      ticketNumber: '#BB-' + Math.floor(100 + Math.random() * 900),
+      ticketNumber: '#BB-' + Date.now().toString(36).toUpperCase().slice(-6),
       branchId: barber.branchId,
       customerName: data.customerName.trim(),
       customerPhone: data.customerPhone.trim() || '+995 5xx xxx xxx',
@@ -772,9 +853,9 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const isStudent = !!data.isStudent;
     const originalPrice = service.price;
-    const discountPercent = isStudent ? 20 : 0;
-    const discountAmount = isStudent && originalPrice ? originalPrice * 0.2 : 0;
-    const netPrice = originalPrice ? originalPrice - discountAmount : 0;
+    const discountPercent = isStudent ? STUDENT_DISCOUNT_PERCENT : 0;
+    const discountAmount = calcStudentDiscount(originalPrice, isStudent);
+    const netPrice = calcNetPrice(originalPrice, isStudent);
 
     const newTicket: BookingAppointment = {
       id: 'apt-' + Date.now(),
@@ -872,23 +953,72 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
+  // Dedicated Admin Expense Creation (Supports both object and positional arguments)
   const addExpense = (
-    title: string, 
-    amount: number, 
-    category: ExpenseCategory = 'Operational', 
+    titleOrData: string | {
+      title: string;
+      amount: number;
+      category?: ExpenseCategory;
+      description?: string;
+      branchId?: BranchId;
+      paymentSource?: ExpensePaymentSource;
+      receiptNumber?: string;
+      allocatedBarberId?: string;
+      allocatedBarberName?: string;
+    },
+    amount?: number,
+    category?: ExpenseCategory,
     description?: string,
-    branchId?: BranchId
+    branchId?: BranchId,
+    paymentSource?: ExpensePaymentSource,
+    receiptNumber?: string
   ) => {
+    let payload: {
+      title: string;
+      amount: number;
+      category?: ExpenseCategory;
+      description?: string;
+      branchId?: BranchId;
+      paymentSource?: ExpensePaymentSource;
+      receiptNumber?: string;
+      allocatedBarberId?: string;
+      allocatedBarberName?: string;
+    };
+
+    if (typeof titleOrData === 'object' && titleOrData !== null) {
+      payload = titleOrData;
+    } else {
+      payload = {
+        title: titleOrData,
+        amount: amount || 0,
+        category,
+        description,
+        branchId,
+        paymentSource,
+        receiptNumber,
+      };
+    }
+
+    const timeNow = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     const newExpense: Expense = {
       id: 'e-' + Date.now(),
-      branchId: branchId || currentBranch,
-      category,
-      title: title.trim(),
-      amount: Math.abs(amount),
+      branchId: payload.branchId || currentBranch,
+      category: payload.category || 'Operational',
+      title: payload.title.trim(),
+      amount: Math.abs(payload.amount),
       date: 'Today',
-      description: description?.trim() || undefined,
+      description: payload.description?.trim() || undefined,
+      paymentSource: payload.paymentSource || 'cash_drawer',
+      receiptNumber: payload.receiptNumber?.trim() || undefined,
+      allocatedBarberId: payload.allocatedBarberId || undefined,
+      allocatedBarberName: payload.allocatedBarberName || undefined,
+      createdAt: `Today, ${timeNow}`,
     };
     setExpenses((prev) => [newExpense, ...prev]);
+  };
+
+  const deleteExpense = (id: string) => {
+    setExpenses((prev) => prev.filter((e) => e.id !== id));
   };
 
   const addWithdrawal = (barberId: string, amount: number, reason: string) => {
@@ -924,17 +1054,6 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   };
 
-  // Commission Base Rule ('discounted' actual paid vs 'list_price' full gross)
-  const [commissionBaseRule, setCommissionBaseRule] = useState<'discounted' | 'list_price'>(() => {
-    const saved = localStorage.getItem('bb_commission_base_rule');
-    return saved === 'list_price' ? 'list_price' : 'discounted';
-  });
-
-  const handleSetCommissionBaseRule = (rule: 'discounted' | 'list_price') => {
-    setCommissionBaseRule(rule);
-    localStorage.setItem('bb_commission_base_rule', rule);
-  };
-
   // Daily Cash Reconciliation & Close per branch
   const [reconciliationOverrides, setReconciliationOverrides] = useState<Record<string, Partial<DailyBranchReconciliation>>>(() => {
     const saved = localStorage.getItem('bb_reconciliations');
@@ -947,10 +1066,15 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const bBookings = bookings.filter((b) => b.branchId === branch.id && isCompletedStatus(b.status));
       const bCashSales = bBookings.filter((b) => b.paymentMethod === 'cash').reduce((sum, b) => sum + b.price, 0);
       const bCardSales = bBookings.filter((b) => b.paymentMethod === 'card').reduce((sum, b) => sum + b.price, 0);
-      const bExpenses = expenses.filter((e) => e.branchId === branch.id).reduce((sum, e) => sum + e.amount, 0);
+      
+      // Deduct only cash expenses paid out from the register drawer
+      const bCashExpenses = expenses
+        .filter((e) => e.branchId === branch.id && (e.paymentSource === 'cash_drawer' || !e.paymentSource))
+        .reduce((sum, e) => sum + e.amount, 0);
+
       const bAdvances = withdrawals.filter((w) => w.branchId === branch.id).reduce((sum, w) => sum + w.amount, 0);
       
-      const expectedCash = branch.initialCashDrawer + bCashSales - bExpenses - bAdvances;
+      const expectedCash = branch.initialCashDrawer + bCashSales - bCashExpenses - bAdvances;
       const override = reconciliationOverrides[branch.id] || {};
       const status: DailyCloseStatus = override.status || 'open';
       const countedCash = override.countedCash;
@@ -964,7 +1088,7 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openingFloat: branch.initialCashDrawer,
         cashSales: bCashSales,
         cardSales: bCardSales,
-        cashExpenses: bExpenses,
+        cashExpenses: bCashExpenses,
         barberAdvances: bAdvances,
         expectedCash,
         countedCash,
@@ -1021,6 +1145,10 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
         loginAsAdmin,
         loginAsBarber,
         logout,
+        language,
+        setLanguage,
+        toggleLanguage,
+        t,
         currentBranch,
         setCurrentBranch,
         branches,
@@ -1044,6 +1172,7 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
         clientsByBarber,
         barberPerformanceList,
         totalExpenses,
+        totalCashExpenses,
         totalWithdrawals,
         netProfit,
         cashInDrawer,
@@ -1066,6 +1195,7 @@ export const CashProvider: React.FC<{ children: React.ReactNode }> = ({ children
         cancelBooking,
         addWalkIn,
         addExpense,
+        deleteExpense,
         addWithdrawal,
         updateBarberCommission,
         theme,

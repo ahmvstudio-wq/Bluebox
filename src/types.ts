@@ -99,7 +99,10 @@ export type ExpenseCategory =
   | 'Business' 
   | 'Barber/worker' 
   | 'Customer-related' 
-  | 'Operational';
+  | 'Operational'
+  | 'Utilities';
+
+export type ExpensePaymentSource = 'cash_drawer' | 'bank_transfer';
 
 export interface Expense {
   id: string;
@@ -109,6 +112,11 @@ export interface Expense {
   amount: number;
   date: string;
   description?: string;
+  paymentSource?: ExpensePaymentSource;
+  receiptNumber?: string;
+  allocatedBarberId?: string;
+  allocatedBarberName?: string;
+  createdAt?: string;
 }
 
 export interface BarberWithdrawal {

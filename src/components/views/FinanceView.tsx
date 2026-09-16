@@ -1,33 +1,23 @@
 import React, { useState } from 'react';
 import { useCash } from '../../context/CashContext';
 import { 
-  TrendingUp, 
-  TrendingDown, 
   Wallet, 
   Plus, 
   Receipt, 
   ArrowDownRight, 
   Banknote,
-  CreditCard,
   X,
   Layers,
   Building,
   Users,
   CheckCircle2,
-  Calendar,
   AlertTriangle,
   Lock,
-  Unlock,
   Sliders,
-  DollarSign,
   Scale,
-  Clock,
-  Sparkles,
-  RefreshCw,
-  Eye,
   ShieldCheck
 } from 'lucide-react';
-import { ExpenseCategory, DailyCloseStatus, BranchId } from '../../types';
+import { ExpenseCategory, DailyCloseStatus } from '../../types';
 
 export const FinanceView: React.FC = () => {
   const { 
@@ -40,7 +30,6 @@ export const FinanceView: React.FC = () => {
     netProfit, 
     cashInDrawer, 
     branchExpenses, 
-    branchWithdrawals, 
     branchBarbers,
     branchRevenueRecords,
     barberPerformanceList,
@@ -51,7 +40,8 @@ export const FinanceView: React.FC = () => {
     performDailyClose,
     updateReconciliationStatus,
     commissionBaseRule,
-    setCommissionBaseRule
+    setCommissionBaseRule,
+    t
   } = useCash();
 
   // Active Ledger Tab: 'revenue' | 'expenses' | 'barber-payments' | 'reconciliation'
@@ -128,10 +118,10 @@ export const FinanceView: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
             <Wallet className="w-5 h-5 text-[#D4AF37]" />
-            Financial Operations, Audit & Cash Reconciliation
+            {t('finance.title', 'Financial Operations, Audit & Cash Reconciliation')}
           </h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Single-source atomic transaction rollup, end-of-day cash drawer balancing, and branch audit trails.
+            {t('finance.subtitle', 'Single-source atomic transaction rollup, end-of-day cash drawer balancing, and branch audit trails.')}
           </p>
         </div>
 
@@ -141,14 +131,14 @@ export const FinanceView: React.FC = () => {
             className="btn-secondary text-xs text-rose-500 dark:text-rose-400"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>+ Add Expense</span>
+            <span>{t('header.addExpense', '+ Add Expense')}</span>
           </button>
           <button
             onClick={() => setShowWithdrawalModal(true)}
             className="btn-secondary text-xs text-amber-500 dark:text-amber-400"
           >
             <ArrowDownRight className="w-3.5 h-3.5" />
-            <span>+ Disburse Advance</span>
+            <span>{t('finance.disburseAdvance', '+ Disburse Advance')}</span>
           </button>
           <button
             onClick={() => {
@@ -158,71 +148,71 @@ export const FinanceView: React.FC = () => {
             className="btn-primary-gold text-xs shadow-lg shadow-[#D4AF37]/15"
           >
             <Scale className="w-3.5 h-3.5" />
-            <span>End-of-Day Close</span>
+            <span>{t('finance.endOfDayClose', 'End-of-Day Close')}</span>
           </button>
         </div>
       </div>
 
-      {/* 4 Essential Metric Cards (2x2 Grid on Mobile, 4 Cols on Desktop) */}
+      {/* 4 Essential Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
         
         {/* 1. Revenue */}
         <div className="card-executive p-3.5 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Revenue</span>
-            <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-1.5 py-0.5">Gross</span>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t('finance.revenue', 'Revenue')}</span>
+            <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-1.5 py-0.5">{t('finance.gross', 'Gross')}</span>
           </div>
           <div className="mt-2 sm:mt-3 flex items-baseline gap-1">
             <span className="text-xl sm:text-3xl font-black text-[var(--text-main)] font-mono">₾{todayRevenue.toFixed(2)}</span>
             <span className="text-[10px] sm:text-xs font-bold text-[#D4AF37]">GEL</span>
           </div>
           <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-1.5 sm:pt-2 truncate">
-            {branchRevenueRecords.length} completed transactions
+            {branchRevenueRecords.length} {t('finance.completedTransactions', 'completed transactions')}
           </div>
         </div>
 
         {/* 2. Expenses */}
         <div className="card-executive p-3.5 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Expenses</span>
-            <span className="badge-status badge-red text-[9px] sm:text-[10px] px-1.5 py-0.5">Costs</span>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t('nav.short.expenses', 'Expenses')}</span>
+            <span className="badge-status badge-red text-[9px] sm:text-[10px] px-1.5 py-0.5">{t('finance.costs', 'Costs')}</span>
           </div>
           <div className="mt-2 sm:mt-3 flex items-baseline gap-1">
             <span className="text-xl sm:text-3xl font-black text-rose-500 dark:text-rose-400 font-mono">₾{totalExpenses.toFixed(2)}</span>
             <span className="text-[10px] sm:text-xs font-bold text-rose-500 dark:text-rose-400">GEL</span>
           </div>
           <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-1.5 sm:pt-2 truncate">
-            All categorized costs
+            {t('finance.allCategorizedCosts', 'All categorized costs')}
           </div>
         </div>
 
         {/* 3. Barber Withdrawals */}
         <div className="card-executive p-3.5 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Advances</span>
-            <span className="badge-status badge-amber text-[9px] sm:text-[10px] px-1.5 py-0.5">Staff</span>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t('auth.scope.advances', 'Advances')}</span>
+            <span className="badge-status badge-amber text-[9px] sm:text-[10px] px-1.5 py-0.5">{t('finance.staff', 'Staff')}</span>
           </div>
           <div className="mt-2 sm:mt-3 flex items-baseline gap-1">
             <span className="text-xl sm:text-3xl font-black text-amber-500 dark:text-amber-400 font-mono">₾{totalWithdrawals.toFixed(2)}</span>
             <span className="text-[10px] sm:text-xs font-bold text-amber-500 dark:text-amber-400">GEL</span>
           </div>
           <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-1.5 sm:pt-2 truncate">
-            Midday advances drawn
+            {t('finance.middayAdvancesDrawn', 'Midday advances drawn')}
           </div>
         </div>
 
         {/* 4. Net Profit */}
         <div className="card-executive p-3.5 sm:p-5">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Net Profit</span>
-            <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-1.5 py-0.5">Profit</span>
+            <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">{t('header.netProfit', 'Net Profit')}</span>
+            <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-1.5 py-0.5">{t('finance.profit', 'Profit')}</span>
           </div>
           <div className="mt-2 sm:mt-3 flex items-baseline gap-1">
             <span className="text-xl sm:text-3xl font-black text-emerald-500 dark:text-emerald-400 font-mono">₾{netProfit.toFixed(2)}</span>
             <span className="text-[10px] sm:text-xs font-bold text-emerald-500 dark:text-emerald-400">GEL</span>
           </div>
           <div className="mt-1.5 sm:mt-2 text-[10px] sm:text-xs text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-1.5 sm:pt-2 truncate">
-            Net cash retained
+            {t('finance.netCashRetained', 'Net cash retained')}
           </div>
         </div>
 
@@ -236,10 +226,10 @@ export const FinanceView: React.FC = () => {
           </div>
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
-              Physical Cash in Drawer
+              {t('finance.physicalDrawer', 'Physical Cash in Drawer')}
             </span>
             <p className="text-[11px] text-[var(--text-muted)]">
-              Opening Float + Cash Collections − Cash Expenses − Barber Advances
+              {t('finance.physicalDrawerDesc', 'Opening Float + Cash Collections − Cash Expenses − Barber Advances')}
             </p>
           </div>
         </div>
@@ -248,7 +238,7 @@ export const FinanceView: React.FC = () => {
           <span className="text-2xl font-black font-mono text-[#D4AF37]">
             ₾{cashInDrawer.toFixed(2)}
           </span>
-          <span className="text-xs text-[var(--text-dim)] font-bold">GEL on hand</span>
+          <span className="text-xs text-[var(--text-dim)] font-bold">{t('header.cashOnHand', 'GEL on hand')}</span>
         </div>
       </div>
 
@@ -258,12 +248,12 @@ export const FinanceView: React.FC = () => {
           <div className="flex items-center gap-2">
             <Building className="w-4 h-4 text-[#D4AF37]" />
             <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
-              Multi-Branch Daily Close Status Flow
+              {t('finance.multiBranchStatus', 'Multi-Branch Daily Close Status Flow')}
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-[11px] text-[var(--text-dim)]">
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Flow: Open &rarr; Counted &rarr; Reviewed &rarr; Closed/Locked</span>
+            <span>{t('finance.statusFlowDesc', 'Flow: Open → Counted → Reviewed → Closed/Locked')}</span>
           </div>
         </div>
 
@@ -275,10 +265,10 @@ export const FinanceView: React.FC = () => {
             const variance = recon?.variance || 0;
 
             const statusBadgeConfig: Record<DailyCloseStatus, { label: string; color: string }> = {
-              open: { label: 'Open', color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
-              counted: { label: 'Counted', color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
-              reviewed: { label: 'Reviewed', color: 'bg-purple-500/10 text-purple-500 border-purple-500/20' },
-              closed: { label: 'Closed / Locked', color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
+              open: { label: t('status.open', 'Open'), color: 'bg-amber-500/10 text-amber-500 border-amber-500/20' },
+              counted: { label: t('status.counted', 'Counted'), color: 'bg-blue-500/10 text-blue-500 border-blue-500/20' },
+              reviewed: { label: t('status.reviewed', 'Reviewed'), color: 'bg-purple-500/10 text-purple-500 border-purple-500/20' },
+              closed: { label: t('status.closed', 'Closed / Locked'), color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' },
             };
             const currentBadge = statusBadgeConfig[status];
 
@@ -295,7 +285,7 @@ export const FinanceView: React.FC = () => {
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-extrabold text-[var(--text-main)] flex items-center gap-1.5">
                     {b.name}
-                    {isCurrent && <span className="text-[10px] text-[#D4AF37] font-semibold">(Active)</span>}
+                    {isCurrent && <span className="text-[10px] text-[#D4AF37] font-semibold">({t('finance.active', 'Active')})</span>}
                   </span>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${currentBadge.color}`}>
                     {currentBadge.label}
@@ -303,18 +293,18 @@ export const FinanceView: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] pt-1 border-t border-[var(--border-subtle)]/60">
-                  <span className="text-[var(--text-dim)]">Expected Cash:</span>
+                  <span className="text-[var(--text-dim)]">{t('finance.expectedCash', 'Expected Cash')}:</span>
                   <span className="font-mono font-bold text-[var(--text-main)]">
                     ₾{(recon?.expectedCash || 0).toFixed(2)}
                   </span>
                 </div>
 
                 <div className="flex items-center justify-between text-[11px] mt-0.5">
-                  <span className="text-[var(--text-dim)]">Variance:</span>
+                  <span className="text-[var(--text-dim)]">{t('finance.variance', 'Variance')}:</span>
                   <span className={`font-mono font-bold ${
                     variance === 0 ? 'text-emerald-500' : variance > 0 ? 'text-blue-400' : 'text-rose-500'
                   }`}>
-                    {variance === 0 ? '₾0.00 Exact' : `${variance > 0 ? '+' : ''}₾${variance.toFixed(2)}`}
+                    {variance === 0 ? `₾0.00 ${t('finance.exact', 'Exact')}` : `${variance > 0 ? '+' : ''}₾${variance.toFixed(2)}`}
                   </span>
                 </div>
               </div>
@@ -332,12 +322,12 @@ export const FinanceView: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xs font-extrabold uppercase tracking-wider text-[var(--text-main)]">
-                Commission Pricing Base Rule (Student 20% Discount Policy)
+                {t('finance.ruleSetting', 'Commission Pricing Base Rule (Student 20% Discount Policy)')}
               </span>
-              <span className="badge-status badge-gold text-[9px] px-1.5 py-0.2">Shop Setting</span>
+              <span className="badge-status badge-gold text-[9px] px-1.5 py-0.2">{t('finance.shopSetting', 'Shop Setting')}</span>
             </div>
             <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
-              Choose whether barber commission split is calculated on actual discounted amount collected vs standard full list price.
+              {t('finance.ruleSettingDesc', 'Choose whether barber commission split is calculated on actual discounted amount collected vs standard full list price.')}
             </p>
           </div>
         </div>
@@ -351,7 +341,7 @@ export const FinanceView: React.FC = () => {
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
-            Actual Discounted Price (e.g. ₾36)
+            {t('finance.actualDiscounted', 'Actual Discounted Price (e.g. ₾36)')}
           </button>
           <button
             onClick={() => setCommissionBaseRule('list_price')}
@@ -361,7 +351,7 @@ export const FinanceView: React.FC = () => {
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
-            Full List Price (e.g. ₾45)
+            {t('finance.fullListPrice', 'Full List Price (e.g. ₾45)')}
           </button>
         </div>
       </div>
@@ -369,11 +359,11 @@ export const FinanceView: React.FC = () => {
       {/* Categorized Expenses Summary Tiles */}
       <div className="space-y-2">
         <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-          Expense Category Breakdown
+          {t('finance.catBreakdown', 'Expense Category Breakdown')}
         </h3>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
-            <div className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Business</div>
+            <div className="text-[10px] uppercase font-bold text-[var(--text-dim)]">{t('expenses.category.business', 'Business')}</div>
             <div className="text-lg font-black font-mono text-rose-500 mt-1">
               ₾{expensesByCategory['Business'].toFixed(2)}
             </div>
@@ -381,7 +371,7 @@ export const FinanceView: React.FC = () => {
           </div>
 
           <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
-            <div className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Barber/Worker</div>
+            <div className="text-[10px] uppercase font-bold text-[var(--text-dim)]">{t('expenses.category.barber', 'Barber/Worker')}</div>
             <div className="text-lg font-black font-mono text-rose-500 mt-1">
               ₾{expensesByCategory['Barber/worker'].toFixed(2)}
             </div>
@@ -389,7 +379,7 @@ export const FinanceView: React.FC = () => {
           </div>
 
           <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
-            <div className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Customer-related</div>
+            <div className="text-[10px] uppercase font-bold text-[var(--text-dim)]">{t('expenses.category.customer', 'Customer-related')}</div>
             <div className="text-lg font-black font-mono text-rose-500 mt-1">
               ₾{expensesByCategory['Customer-related'].toFixed(2)}
             </div>
@@ -397,7 +387,7 @@ export const FinanceView: React.FC = () => {
           </div>
 
           <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
-            <div className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Operational</div>
+            <div className="text-[10px] uppercase font-bold text-[var(--text-dim)]">{t('expenses.category.operational', 'Operational')}</div>
             <div className="text-lg font-black font-mono text-rose-500 mt-1">
               ₾{expensesByCategory['Operational'].toFixed(2)}
             </div>
@@ -417,7 +407,7 @@ export const FinanceView: React.FC = () => {
           }`}
         >
           <Receipt className="w-4 h-4 text-[#D4AF37]" />
-          <span>Atomic Revenue Ledger ({branchRevenueRecords.length})</span>
+          <span>{t('finance.tab.revenue', '1. Atomic Revenue Ledger')} ({branchRevenueRecords.length})</span>
         </button>
 
         <button
@@ -429,7 +419,7 @@ export const FinanceView: React.FC = () => {
           }`}
         >
           <Scale className="w-4 h-4 text-emerald-500" />
-          <span>Cash Drawer Reconciliation & Audit</span>
+          <span>{t('finance.tab.recon', '4. Cash Drawer Reconciliation & Audit')}</span>
         </button>
 
         <button
@@ -441,7 +431,7 @@ export const FinanceView: React.FC = () => {
           }`}
         >
           <Layers className="w-4 h-4 text-rose-500" />
-          <span>Categorized Expenses ({branchExpenses.length})</span>
+          <span>{t('finance.tab.expenses', '2. Categorized Expenses')} ({branchExpenses.length})</span>
         </button>
 
         <button
@@ -453,7 +443,7 @@ export const FinanceView: React.FC = () => {
           }`}
         >
           <Users className="w-4 h-4 text-amber-500" />
-          <span>Barber Payout Settlements ({barberPerformanceList.length})</span>
+          <span>{t('finance.tab.barbers', '3. Barber Payout Settlements')} ({barberPerformanceList.length})</span>
         </button>
       </div>
 
@@ -463,14 +453,14 @@ export const FinanceView: React.FC = () => {
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
             <div>
               <h3 className="text-sm font-bold text-[var(--text-main)]">
-                Single Source of Truth: Settled Service Transactions Log
+                {t('finance.revenueLedger', 'Atomic Revenue Ledger')}
               </h3>
               <p className="text-[11px] text-[var(--text-muted)]">
                 Each completed service derives barber earnings, shop margin, and cash flow automatically.
               </p>
             </div>
             <span className="text-xs font-mono font-bold text-emerald-500">
-              Total: ₾{todayRevenue.toFixed(2)} GEL
+              {t('finance.totalRevenue', 'Total Revenue:')} ₾{todayRevenue.toFixed(2)} GEL
             </span>
           </div>
 
@@ -478,21 +468,21 @@ export const FinanceView: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-[var(--border-subtle)] text-[var(--text-dim)] uppercase text-[10px] tracking-wider">
-                  <th className="pb-3 font-bold">Ticket</th>
-                  <th className="pb-3 font-bold">Service</th>
-                  <th className="pb-3 font-bold">Customer</th>
-                  <th className="pb-3 font-bold">Barber</th>
-                  <th className="pb-3 font-bold">Branch</th>
-                  <th className="pb-3 font-bold">Payment Method</th>
-                  <th className="pb-3 font-bold">Date / Time</th>
-                  <th className="pb-3 font-bold text-right">Amount</th>
+                  <th className="pb-3 font-bold">{t('finance.th.ticket', 'Ticket')}</th>
+                  <th className="pb-3 font-bold">{t('finance.th.service', 'Service')}</th>
+                  <th className="pb-3 font-bold">{t('finance.th.customer', 'Customer')}</th>
+                  <th className="pb-3 font-bold">{t('finance.th.barber', 'Barber')}</th>
+                  <th className="pb-3 font-bold">{t('finance.th.branch', 'Branch')}</th>
+                  <th className="pb-3 font-bold">{t('payment.method', 'Payment Method')}</th>
+                  <th className="pb-3 font-bold">{t('finance.dateTime', 'Date / Time')}</th>
+                  <th className="pb-3 font-bold text-right">{t('finance.amount', 'Amount')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
                 {branchRevenueRecords.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-6 text-center text-xs text-[var(--text-dim)]">
-                      No revenue transactions logged yet for this branch.
+                      {t('finance.noRevenue', 'No revenue transactions recorded for this branch today.')}
                     </td>
                   </tr>
                 ) : (
@@ -531,24 +521,24 @@ export const FinanceView: React.FC = () => {
               <div>
                 <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
                   <Scale className="w-4 h-4 text-emerald-500" />
-                  Daily Cash Drawer Audit — {activeBranchName}
+                  {t('finance.dailyReconTitle', 'Daily Cash Drawer Audit & Reconciliation')} — {activeBranchName}
                 </h3>
                 <p className="text-[11px] text-[var(--text-muted)]">
-                  Verifies physical register cash against recorded sales to prevent leakage and detect cash variances.
+                  {t('finance.dailyReconSubtitle', 'Verifies physical register cash against recorded sales to prevent leakage and detect cash variances.')}
                 </p>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs text-[var(--text-dim)] font-semibold">Status:</span>
+                <span className="text-xs text-[var(--text-dim)] font-semibold">{t('finance.status', 'Status:')}</span>
                 <select
                   value={currentRecon.status}
                   onChange={(e) => updateReconciliationStatus(currentBranch, e.target.value as DailyCloseStatus)}
                   className="text-xs font-bold bg-[var(--bg-subtle)] border border-[var(--border-subtle)] rounded-lg px-2.5 py-1"
                 >
-                  <option value="open">Open (Active Trading)</option>
-                  <option value="counted">Counted (Physical Drawer Counted)</option>
-                  <option value="reviewed">Reviewed (Manager Verified)</option>
-                  <option value="closed">Closed / Locked (Audited)</option>
+                  <option value="open">{t('status.open', 'Open')}</option>
+                  <option value="counted">{t('status.counted', 'Counted')}</option>
+                  <option value="reviewed">{t('status.reviewed', 'Reviewed')}</option>
+                  <option value="closed">{t('status.closed', 'Closed / Locked')}</option>
                 </select>
 
                 <button
@@ -559,7 +549,7 @@ export const FinanceView: React.FC = () => {
                   className="btn-primary-gold text-xs py-1.5 px-3 flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Perform Count & Close</span>
+                  <span>{t('finance.performClose', 'Perform Count & Close')}</span>
                 </button>
               </div>
             </div>
@@ -568,7 +558,7 @@ export const FinanceView: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3 p-4 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)]">
               
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold text-[var(--text-dim)]">1. Opening Float</span>
+                <span className="text-[10px] uppercase font-bold text-[var(--text-dim)]">{t('finance.openingRegisterFloat', '1. Opening Float')}</span>
                 <div className="text-lg font-black font-mono text-[var(--text-main)]">
                   ₾{currentRecon.openingFloat.toFixed(2)}
                 </div>
@@ -576,35 +566,35 @@ export const FinanceView: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold text-emerald-500">(+) Cash Sales</span>
+                <span className="text-[10px] uppercase font-bold text-emerald-500">{t('finance.plusCashCollections', '(+) Cash Sales')}</span>
                 <div className="text-lg font-black font-mono text-emerald-500">
                   +₾{currentRecon.cashSales.toFixed(2)}
                 </div>
-                <div className="text-[10px] text-[var(--text-muted)]">Cash service receipts</div>
+                <div className="text-[10px] text-[var(--text-muted)]">{t('finance.cashSales', 'Cash Sales')}</div>
               </div>
 
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold text-rose-500">(-) Cash Expenses</span>
+                <span className="text-[10px] uppercase font-bold text-rose-500">{t('finance.minusCashExpenses', '(-) Cash Expenses')}</span>
                 <div className="text-lg font-black font-mono text-rose-500">
                   -₾{currentRecon.cashExpenses.toFixed(2)}
                 </div>
-                <div className="text-[10px] text-[var(--text-muted)]">Drawer cash paid out</div>
+                <div className="text-[10px] text-[var(--text-muted)]">{t('finance.cashExpenses', 'Cash Expenses')}</div>
               </div>
 
               <div className="space-y-1">
-                <span className="text-[10px] uppercase font-bold text-amber-500">(-) Staff Advances</span>
+                <span className="text-[10px] uppercase font-bold text-amber-500">{t('finance.minusStaffAdvances', '(-) Staff Advances')}</span>
                 <div className="text-lg font-black font-mono text-amber-500">
                   -₾{currentRecon.barberAdvances.toFixed(2)}
                 </div>
-                <div className="text-[10px] text-[var(--text-muted)]">Barber midday draws</div>
+                <div className="text-[10px] text-[var(--text-muted)]">{t('finance.staffAdvances', 'Staff Advances')}</div>
               </div>
 
               <div className="space-y-1 p-2 rounded-lg bg-[#D4AF37]/10 border border-[#D4AF37]/30">
-                <span className="text-[10px] uppercase font-black text-[#D4AF37]">(=) Expected Cash</span>
+                <span className="text-[10px] uppercase font-black text-[#D4AF37]">{t('finance.expectedPhysicalCash', '(=) Expected Cash')}</span>
                 <div className="text-xl font-black font-mono text-[#D4AF37]">
                   ₾{currentRecon.expectedCash.toFixed(2)}
                 </div>
-                <div className="text-[10px] text-[var(--text-muted)] font-bold">Should be in drawer</div>
+                <div className="text-[10px] text-[var(--text-muted)] font-bold">{t('finance.expectedCash', 'Expected Cash')}</div>
               </div>
 
             </div>
@@ -618,7 +608,7 @@ export const FinanceView: React.FC = () => {
                   
                   <div className="p-4 rounded-xl border bg-[var(--bg-card)] border-[var(--border-subtle)] flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Counted Physical Cash</span>
+                      <span className="text-[10px] uppercase font-bold text-[var(--text-dim)]">{t('finance.countedPhysicalCash', 'Counted Physical Cash')}</span>
                       <div className="text-2xl font-black font-mono text-[var(--text-main)] mt-0.5">
                         ₾{counted.toFixed(2)} GEL
                       </div>
@@ -640,19 +630,12 @@ export const FinanceView: React.FC = () => {
                   }`}>
                     <div>
                       <span className="text-[10px] uppercase font-bold opacity-80">
-                        Reconciliation Variance Result
+                        {t('finance.netCashVariance', 'Reconciliation Variance Result')}
                       </span>
                       <div className="text-2xl font-black font-mono mt-0.5">
-                        {reconVariance === 0 && '₾0.00 Exact Match'}
-                        {reconVariance > 0 && `+₾${reconVariance.toFixed(2)} Overage`}
-                        {reconVariance < 0 && `-₾${Math.abs(reconVariance).toFixed(2)} Shortage Alert`}
-                      </div>
-                      <div className="text-[11px] opacity-90 mt-0.5">
-                        {reconVariance === 0 
-                          ? 'Zero discrepancies detected. Drawer is perfectly balanced.'
-                          : reconVariance > 0
-                          ? 'Drawer contains excess cash over logged sales.'
-                          : 'Physical drawer cash is below expected sales. Please audit receipts.'}
+                        {reconVariance === 0 && `₾0.00 ${t('finance.exactMatch', 'Exact match verified')}`}
+                        {reconVariance > 0 && `+₾${reconVariance.toFixed(2)} ${t('finance.overage', 'Overage')}`}
+                        {reconVariance < 0 && `-₾${Math.abs(reconVariance).toFixed(2)} ${t('finance.shortage', 'Shortage Alert')}`}
                       </div>
                     </div>
                     <div className="p-2.5 rounded-xl bg-white/10">
@@ -666,7 +649,7 @@ export const FinanceView: React.FC = () => {
 
             {currentRecon.notes && (
               <div className="p-3 rounded-lg bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-xs text-[var(--text-muted)]">
-                <span className="font-bold text-[var(--text-main)]">Closing Audit Notes: </span>
+                <span className="font-bold text-[var(--text-main)]">{t('finance.notesSignoff', 'Closing Audit Notes')}: </span>
                 {currentRecon.notes}
               </div>
             )}
@@ -680,13 +663,13 @@ export const FinanceView: React.FC = () => {
         <div className="card-executive p-5 overflow-hidden space-y-3">
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
             <h3 className="text-sm font-bold text-[var(--text-main)]">
-              Expenses Ledger (Business, Barber, Customer, Operational)
+              {t('finance.expensesLedger', 'Categorized Expenses')}
             </h3>
             <button
               onClick={() => setShowExpenseModal(true)}
               className="btn-primary-gold text-xs py-1 px-2.5"
             >
-              + Log Expense
+              {t('header.addExpense', '+ Add Expense')}
             </button>
           </div>
 
@@ -694,19 +677,19 @@ export const FinanceView: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-[var(--border-subtle)] text-[var(--text-dim)] uppercase text-[10px] tracking-wider">
-                  <th className="pb-3 font-bold">Category</th>
-                  <th className="pb-3 font-bold">Title</th>
-                  <th className="pb-3 font-bold">Description</th>
-                  <th className="pb-3 font-bold">Branch</th>
-                  <th className="pb-3 font-bold">Date</th>
-                  <th className="pb-3 font-bold text-right">Amount</th>
+                  <th className="pb-3 font-bold">{t('finance.th.category', 'Category')}</th>
+                  <th className="pb-3 font-bold">{t('finance.th.title', 'Title')}</th>
+                  <th className="pb-3 font-bold">{t('expenses.modal.notesLabel', 'Description')}</th>
+                  <th className="pb-3 font-bold">{t('finance.th.branch', 'Branch')}</th>
+                  <th className="pb-3 font-bold">{t('finance.th.date', 'Date')}</th>
+                  <th className="pb-3 font-bold text-right">{t('finance.amount', 'Amount')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
                 {branchExpenses.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-6 text-center text-xs text-[var(--text-dim)]">
-                      No operating expenses recorded for this branch.
+                      {t('finance.noExpenses', 'No operating expenses recorded for this branch.')}
                     </td>
                   </tr>
                 ) : (
@@ -741,17 +724,17 @@ export const FinanceView: React.FC = () => {
           <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
             <div>
               <h3 className="text-sm font-bold text-[var(--text-main)]">
-                Barber Payment & Earnings Settlement (50% Commission)
+                {t('finance.payoutTitle', 'Barber Commission & Settlement Ledger (50% Standard)')}
               </h3>
               <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
-                Each barber earns 50% net on completed haircuts. Outstanding balances are payable at cycle end.
+                {t('finance.payoutSubtitle', 'Automated 50% commission calculation minus advances drawn during shift.')}
               </p>
             </div>
             <button
               onClick={() => setShowWithdrawalModal(true)}
               className="btn-primary-gold text-xs py-1.5 px-3"
             >
-              + Disburse Advance
+              {t('finance.disburseAdvance', '+ Disburse Advance')}
             </button>
           </div>
 
@@ -759,12 +742,12 @@ export const FinanceView: React.FC = () => {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-[var(--border-subtle)] text-[var(--text-dim)] uppercase text-[10px] tracking-wider">
-                  <th className="pb-3 font-bold">Barber</th>
-                  <th className="pb-3 font-bold">Services Done</th>
-                  <th className="pb-3 font-bold">Gross Revenue</th>
-                  <th className="pb-3 font-bold text-[#D4AF37]">Barber Earned (50%)</th>
-                  <th className="pb-3 font-bold text-amber-500">Withdrawn / Advances</th>
-                  <th className="pb-3 font-bold text-right text-emerald-500">Remaining Owed</th>
+                  <th className="pb-3 font-bold">{t('finance.th.barberStylist', 'Barber')}</th>
+                  <th className="pb-3 font-bold">{t('dash.cutsDone', 'Services Done')}</th>
+                  <th className="pb-3 font-bold">{t('finance.th.grossGenerated', 'Gross Revenue')}</th>
+                  <th className="pb-3 font-bold text-[#D4AF37]">{t('finance.th.earned', 'Barber Earned (50%)')}</th>
+                  <th className="pb-3 font-bold text-amber-500">{t('finance.th.advances', 'Withdrawn / Advances')}</th>
+                  <th className="pb-3 font-bold text-right text-emerald-500">{t('barber.remainingBalance', 'Remaining Owed')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -781,7 +764,7 @@ export const FinanceView: React.FC = () => {
                         <div className="text-[10px] text-[var(--text-dim)] font-normal">{stat.barber.specialty}</div>
                       </div>
                     </td>
-                    <td className="py-3 font-mono text-[var(--text-main)]">{stat.servicesCompleted} cuts</td>
+                    <td className="py-3 font-mono text-[var(--text-main)]">{stat.servicesCompleted} {t('dash.cuts', 'cuts')}</td>
                     <td className="py-3 font-mono font-bold text-[var(--text-main)]">₾{stat.revenueGenerated.toFixed(2)} GEL</td>
                     <td className="py-3 font-mono font-black text-[#D4AF37]">₾{stat.monthEarnings.toFixed(2)} GEL</td>
                     <td className="py-3 font-mono font-black text-amber-500">-₾{stat.totalWithdrawn.toFixed(2)} GEL</td>
@@ -805,7 +788,7 @@ export const FinanceView: React.FC = () => {
                 <div className="p-2 rounded-xl bg-rose-500/10 text-rose-500">
                   <Receipt className="w-5 h-5" />
                 </div>
-                <h3 className="font-extrabold text-base text-[var(--text-main)]">Record Operating Expense</h3>
+                <h3 className="font-extrabold text-base text-[var(--text-main)]">{t('finance.modal.expenseTitle', 'Record Business / Shop Expense')}</h3>
               </div>
               <button
                 onClick={() => setShowExpenseModal(false)}
@@ -817,27 +800,27 @@ export const FinanceView: React.FC = () => {
 
             <form onSubmit={handleExpenseSubmit} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Expense Category *</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('finance.modal.expenseCategory', 'Expense Category *')}</label>
                 <select
                   value={expenseCategory}
                   onChange={(e) => setExpenseCategory(e.target.value as ExpenseCategory)}
                   className="w-full font-semibold"
                 >
-                  <option value="Operational">Operational (Barbicide, Towels, Sanitation)</option>
-                  <option value="Customer-related">Customer-related (Espresso, Beverages, Lounge)</option>
-                  <option value="Barber/worker">Barber/worker (Clipper Blades, Maintenance)</option>
-                  <option value="Business">Business (Internet, Licenses, Terminal)</option>
+                  <option value="Operational">{t('expenses.category.operational', 'Operational')}</option>
+                  <option value="Customer-related">{t('expenses.category.customer', 'Customer-related')}</option>
+                  <option value="Barber/worker">{t('expenses.category.barber', 'Barber/Worker')}</option>
+                  <option value="Business">{t('expenses.category.business', 'Business')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Assign to Barber (Optional)</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('finance.modal.assignBarber', 'Assign to Barber / Station (Optional)')}</label>
                 <select
                   value={expenseBarberId}
                   onChange={(e) => setExpenseBarberId(e.target.value)}
                   className="w-full font-semibold"
                 >
-                  <option value="all">General Shop / All Staff</option>
+                  <option value="all">{t('finance.modal.allStaff', 'General Shop (All Staff)')}</option>
                   {branchBarbers.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name} ({b.specialty})
@@ -847,7 +830,7 @@ export const FinanceView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Expense Title *</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('finance.modal.expenseItem', 'Expense Title / Item Description *')}</label>
                 <input
                   type="text"
                   required
@@ -859,7 +842,7 @@ export const FinanceView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Description / Notes (Optional)</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('finance.modal.expenseNotes', 'Notes / Memo (Optional)')}</label>
                 <input
                   type="text"
                   placeholder="e.g. Disinfection liquid for 6 stations"
@@ -870,7 +853,7 @@ export const FinanceView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Amount (GEL) *</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('finance.modal.expenseAmount', 'Expense Amount (GEL) *')}</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-[var(--text-dim)]">₾</span>
                   <input
@@ -887,10 +870,10 @@ export const FinanceView: React.FC = () => {
 
               <div className="pt-2 flex justify-end gap-2 border-t border-[var(--border-subtle)]">
                 <button type="button" onClick={() => setShowExpenseModal(false)} className="btn-secondary">
-                  Cancel
+                  {t('action.cancel', 'Cancel')}
                 </button>
                 <button type="submit" className="btn-primary-gold">
-                  Record Expense
+                  {t('finance.modal.recordExpense', 'Record Expense')}
                 </button>
               </div>
             </form>
@@ -907,7 +890,7 @@ export const FinanceView: React.FC = () => {
                 <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
                   <ArrowDownRight className="w-5 h-5" />
                 </div>
-                <h3 className="font-extrabold text-base text-[var(--text-main)]">Disburse Barber Cash Advance</h3>
+                <h3 className="font-extrabold text-base text-[var(--text-main)]">{t('finance.modal.advanceTitle', 'Disburse Barber Cash Advance')}</h3>
               </div>
               <button
                 onClick={() => setShowWithdrawalModal(false)}
@@ -919,7 +902,7 @@ export const FinanceView: React.FC = () => {
 
             <form onSubmit={handleWithdrawalSubmit} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Select Barber *</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('finance.modal.selectBarber', 'Select Barber Receiving Advance *')}</label>
                 <select
                   value={selectedBarberId}
                   onChange={(e) => setSelectedBarberId(e.target.value)}
@@ -932,7 +915,7 @@ export const FinanceView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Advance Reason *</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('finance.modal.advanceReason', 'Reason / Memo *')}</label>
                 <input
                   type="text"
                   required
@@ -944,7 +927,7 @@ export const FinanceView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[var(--text-muted)] font-semibold mb-1">Advance Amount (GEL) *</label>
+                <label className="block text-[var(--text-muted)] font-semibold mb-1">{t('finance.modal.advanceAmount', 'Advance Amount (GEL) *')}</label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-[var(--text-dim)]">₾</span>
                   <input
@@ -960,10 +943,10 @@ export const FinanceView: React.FC = () => {
 
               <div className="pt-2 flex justify-end gap-2 border-t border-[var(--border-subtle)]">
                 <button type="button" onClick={() => setShowWithdrawalModal(false)} className="btn-secondary">
-                  Cancel
+                  {t('action.cancel', 'Cancel')}
                 </button>
                 <button type="submit" className="btn-primary-gold">
-                  Disburse Cash
+                  {t('finance.modal.disburseAdvance', 'Disburse Cash Advance')}
                 </button>
               </div>
             </form>
@@ -982,10 +965,10 @@ export const FinanceView: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-extrabold text-base text-[var(--text-main)]">
-                    End-of-Day Cash Close — {activeBranchName}
+                    {t('finance.closeModalTitle', 'End-of-Day Cash Close')} — {activeBranchName}
                   </h3>
                   <p className="text-[11px] text-[var(--text-muted)]">
-                    Verify cash drawer balance and audit variance
+                    {t('finance.dailyReconSubtitle', 'Verify cash drawer balance and audit variance')}
                   </p>
                 </div>
               </div>
@@ -1002,19 +985,19 @@ export const FinanceView: React.FC = () => {
               {/* Drawer Math Review */}
               <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-2">
                 <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-[var(--text-dim)]">System Calculated Expected Cash:</span>
+                  <span className="text-[var(--text-dim)]">{t('finance.expectedPhysicalCash', 'Expected Physical Register Cash:')}</span>
                   <span className="font-mono font-bold text-base text-[#D4AF37]">
                     ₾{cashInDrawer.toFixed(2)} GEL
                   </span>
                 </div>
                 <div className="text-[10px] text-[var(--text-muted)]">
-                  Based on opening float + cash collections − cash expenses − staff advances.
+                  {t('finance.physicalDrawerDesc', 'Opening Float + Cash Collections − Cash Expenses − Barber Advances')}
                 </div>
               </div>
 
               <div>
                 <label className="block text-[var(--text-muted)] font-semibold mb-1">
-                  Physical Counted Cash in Drawer (GEL) *
+                  {t('finance.modal.countedCash', 'Counted Physical Cash in Drawer (GEL) *')}
                 </label>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono font-bold text-[var(--text-dim)]">₾</span>
@@ -1046,9 +1029,9 @@ export const FinanceView: React.FC = () => {
                       <AlertTriangle className="w-4 h-4" />
                     )}
                     <span className="font-bold">
-                      {parseFloat(physicalCashCount) - cashInDrawer === 0 && 'Variance: ₾0.00 Exact Match'}
-                      {parseFloat(physicalCashCount) - cashInDrawer > 0 && `Variance: +₾${(parseFloat(physicalCashCount) - cashInDrawer).toFixed(2)} Overage`}
-                      {parseFloat(physicalCashCount) - cashInDrawer < 0 && `Variance: -₾${Math.abs(parseFloat(physicalCashCount) - cashInDrawer).toFixed(2)} Shortage Alert`}
+                      {parseFloat(physicalCashCount) - cashInDrawer === 0 && `Variance: ₾0.00 ${t('finance.exactMatch', 'Exact match verified')}`}
+                      {parseFloat(physicalCashCount) - cashInDrawer > 0 && `Variance: +₾${(parseFloat(physicalCashCount) - cashInDrawer).toFixed(2)} ${t('finance.overage', 'Overage')}`}
+                      {parseFloat(physicalCashCount) - cashInDrawer < 0 && `Variance: -₾${Math.abs(parseFloat(physicalCashCount) - cashInDrawer).toFixed(2)} ${t('finance.shortage', 'Shortage Alert')}`}
                     </span>
                   </div>
                 </div>
@@ -1056,7 +1039,7 @@ export const FinanceView: React.FC = () => {
 
               <div>
                 <label className="block text-[var(--text-muted)] font-semibold mb-1">
-                  Reconciliation Notes & Sign-off (Optional)
+                  {t('finance.modal.reconNotes', 'Reconciliation Notes & Sign-off *')}
                 </label>
                 <textarea
                   rows={2}
@@ -1069,11 +1052,11 @@ export const FinanceView: React.FC = () => {
 
               <div className="pt-2 flex justify-end gap-2 border-t border-[var(--border-subtle)]">
                 <button type="button" onClick={() => setShowCloseModal(false)} className="btn-secondary">
-                  Cancel
+                  {t('action.cancel', 'Cancel')}
                 </button>
                 <button type="submit" className="btn-primary-gold flex items-center gap-1.5">
                   <Lock className="w-3.5 h-3.5" />
-                  <span>Lock & Complete Close</span>
+                  <span>{t('finance.modal.lockClose', 'Lock & Complete Day Close')}</span>
                 </button>
               </div>
             </form>

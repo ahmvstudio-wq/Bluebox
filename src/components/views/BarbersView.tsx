@@ -1,22 +1,16 @@
 import React, { useState, useMemo } from 'react';
 import { useCash } from '../../context/CashContext';
+import { DEFAULT_COMMISSION_RATE, STUDENT_DISCOUNT_PERCENT } from '../../constants';
 import { 
   Scissors, 
-  ArrowDownRight, 
   Clock, 
   X, 
   ChevronDown, 
   ChevronUp, 
-  CalendarCheck, 
-  ShieldCheck, 
   CheckCircle2,
   Lock,
   UserCheck,
-  TrendingUp,
   Award,
-  DollarSign,
-  Users,
-  Settings,
   Percent,
   Sliders,
   Sparkles,
@@ -29,11 +23,11 @@ export const BarbersView: React.FC = () => {
     barbers,
     barberPerformanceList, 
     branchBookings, 
-    branchWithdrawals, 
     loginAsBarber,
     updateBarberCommission,
     branches,
-    currentBranch
+    currentBranch,
+    t
   } = useCash();
 
   const [expandedBarberId, setExpandedBarberId] = useState<string | null>(null);
@@ -73,8 +67,8 @@ export const BarbersView: React.FC = () => {
     setIsCommissionModalOpen(false);
 
     setTimeout(() => {
-      setToastMessage(null), 4000;
-    });
+      setToastMessage(null);
+    }, 4000);
   };
 
   // 1. Staff Performance Benchmark Metrics
@@ -90,10 +84,6 @@ export const BarbersView: React.FC = () => {
     return [...withCuts].sort(
       (a, b) => (b.revenueGenerated / b.servicesCompleted) - (a.revenueGenerated / a.servicesCompleted)
     )[0];
-  }, [barberPerformanceList]);
-
-  const totalBranchRevenue = useMemo(() => {
-    return barberPerformanceList.reduce((sum, b) => sum + b.revenueGenerated, 0);
   }, [barberPerformanceList]);
 
   const totalBranchCuts = useMemo(() => {
@@ -129,10 +119,10 @@ export const BarbersView: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
             <Scissors className="w-5 h-5 text-[#D4AF37]" />
-            Barber Performance & Commission Allocation
+            {t('barbers.title', 'Barber Performance & Commission Allocation')}
           </h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Operational leaderboards, individual chair output, custom commission tiers, and live station ledgers for {activeBranchData.name}.
+            {t('barbers.subtitle', 'Operational leaderboards, individual chair output, automated 50% commission tiers, and live station ledgers.')} ({activeBranchData.name})
           </p>
         </div>
 
@@ -146,7 +136,7 @@ export const BarbersView: React.FC = () => {
           className="btn-primary-gold text-xs py-2 px-4 font-bold flex items-center gap-2 shadow-md active:scale-95 shrink-0 self-start sm:self-auto"
         >
           <Sliders className="w-3.5 h-3.5" />
-          <span>Allocate Commission & Rates</span>
+          <span>{t('barbers.allocateBtn', 'Allocate Commission & Rates')}</span>
         </button>
       </div>
 
@@ -157,10 +147,10 @@ export const BarbersView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Most Cuts Served
+              {t('barbers.mostCuts', 'Most Cuts Served')}
             </span>
             <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-2 py-0.5 font-bold flex items-center gap-1">
-              <Scissors className="w-3 h-3 text-[#D4AF37]" /> Volume
+              <Scissors className="w-3 h-3 text-[#D4AF37]" /> {t('barbers.volume', 'Volume')}
             </span>
           </div>
           <div className="mt-3">
@@ -168,7 +158,7 @@ export const BarbersView: React.FC = () => {
               {topCutsBarber?.barber.name || 'Barber'}
             </span>
             <span className="text-xs font-mono font-bold text-emerald-500 dark:text-emerald-400 block mt-0.5">
-              {topCutsBarber?.servicesCompleted || 0} cuts completed today
+              {topCutsBarber?.servicesCompleted || 0} {t('barbers.cutsCompletedToday', 'cuts completed today')}
             </span>
           </div>
         </div>
@@ -177,10 +167,10 @@ export const BarbersView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Highest Ticket Avg
+              {t('barbers.highestTicket', 'Highest Ticket Avg')}
             </span>
             <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-2 py-0.5 font-bold flex items-center gap-1">
-              <Award className="w-3 h-3 text-blue-400" /> Premium
+              <Award className="w-3 h-3 text-blue-400" /> {t('barbers.premium', 'Premium')}
             </span>
           </div>
           <div className="mt-3">
@@ -188,7 +178,7 @@ export const BarbersView: React.FC = () => {
               {topAvgTicketBarber?.barber.name || 'Barber'}
             </span>
             <span className="text-xs font-mono font-bold text-[#D4AF37] block mt-0.5">
-              ₾{topBarberAvgTicket.toFixed(1)} GEL / client
+              ₾{topBarberAvgTicket.toFixed(1)} {t('barbers.perClient', 'GEL / client')}
             </span>
           </div>
         </div>
@@ -197,18 +187,18 @@ export const BarbersView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Avg Cuts / Barber
+              {t('barbers.avgCuts', 'Avg Cuts / Barber')}
             </span>
             <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-2 py-0.5 font-bold">
-              Benchmark
+              {t('barbers.benchmark', 'Benchmark')}
             </span>
           </div>
           <div className="mt-3">
             <span className="text-xl sm:text-2xl font-black text-[var(--text-main)] font-mono block">
-              {avgCutsPerBarber.toFixed(1)} Cuts
+              {avgCutsPerBarber.toFixed(1)} {t('barbers.cuts', 'Cuts')}
             </span>
             <span className="text-[11px] text-[var(--text-muted)] block mt-0.5">
-              Per active barber station
+              {t('barbers.perActiveStation', 'Per active barber station')}
             </span>
           </div>
         </div>
@@ -217,15 +207,15 @@ export const BarbersView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Active Stations
+              {t('barbers.activeChairs', 'Active Stations')}
             </span>
             <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-2 py-0.5 font-bold">
-              Staff
+              {t('barbers.staff', 'Staff')}
             </span>
           </div>
           <div className="mt-3">
             <span className="text-xl sm:text-2xl font-black text-[#D4AF37] font-mono block">
-              {barberPerformanceList.length} Chairs
+              {barberPerformanceList.length} {t('barbers.chairs', 'Chairs')}
             </span>
             <span className="text-[11px] text-[var(--text-muted)] block mt-0.5">
               {activeBranchData.name}
@@ -267,11 +257,11 @@ export const BarbersView: React.FC = () => {
                           className="badge-status badge-gold cursor-pointer hover:scale-105 transition-transform"
                           title="Click to allocate custom commission rate"
                         >
-                          {commissionPercentDisplay}% Commission ⚙️
+                          {commissionPercentDisplay}% {t('barber.commission50Badge', 'Commission')} ⚙️
                         </button>
 
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-muted)]">
-                          {stat.barber.workingHours}h Shift
+                          {stat.barber.workingHours}h {t('dash.shift', 'Shift')}
                         </span>
                         <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-[var(--text-dim)] flex items-center gap-1">
                           <Lock className="w-2.5 h-2.5 text-[#D4AF37]" />
@@ -291,7 +281,7 @@ export const BarbersView: React.FC = () => {
                       className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-[#D4AF37] border border-[#D4AF37]/40 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
                     >
                       <Sliders className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span>Allocate Commission</span>
+                      <span>{t('barbers.allocate', 'Allocate')}</span>
                     </button>
 
                     <button
@@ -299,7 +289,7 @@ export const BarbersView: React.FC = () => {
                       className="btn-secondary text-xs py-1.5 px-3 flex items-center gap-1.5"
                     >
                       <UserCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span>Switch to Barber View</span>
+                      <span>{t('auth.switchToBarber', 'Switch to Barber View')}</span>
                     </button>
 
                     <button
@@ -314,27 +304,27 @@ export const BarbersView: React.FC = () => {
                 {/* 2. Key Metrics Row */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
                   <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Today's Revenue</span>
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('dash.todayRevenue', "Today's Revenue")}</span>
                     <span className="text-lg font-black text-[var(--text-main)] font-mono">₾{stat.revenueGenerated.toFixed(2)}</span>
-                    <span className="text-[9px] text-[var(--text-dim)] block">Gross Generated</span>
+                    <span className="text-[9px] text-[var(--text-dim)] block">{t('barbers.grossGenerated', 'Gross Generated')}</span>
                   </div>
 
                   <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Clients Served</span>
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('dash.clientsServed', 'Clients Served')}</span>
                     <span className="text-lg font-black text-emerald-500 font-mono">{stat.clientsServedToday}</span>
-                    <span className="text-[9px] text-[var(--text-dim)] block">{stat.servicesCompleted} cuts</span>
+                    <span className="text-[9px] text-[var(--text-dim)] block">{stat.servicesCompleted} {t('dash.cuts', 'cuts')}</span>
                   </div>
 
                   <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{commissionPercentDisplay}% Barber Payout</span>
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{commissionPercentDisplay}% {t('barbers.payout', 'Barber Payout')}</span>
                     <span className="text-lg font-black text-[#D4AF37] font-mono">₾{stat.barberEarnings.toFixed(2)}</span>
-                    <span className="text-[9px] text-[var(--text-dim)] block">Today's Share</span>
+                    <span className="text-[9px] text-[var(--text-dim)] block">{t('barbers.todayShare', "Today's Share")}</span>
                   </div>
 
                   <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Monthly Earnings</span>
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('barbers.monthlyEarnings', 'Monthly Accumulated Earnings')}</span>
                     <span className="text-lg font-black text-emerald-500 font-mono">₾{stat.monthEarnings.toFixed(2)}</span>
-                    <span className="text-[9px] text-[var(--text-dim)] block">MTD Accumulated</span>
+                    <span className="text-[9px] text-[var(--text-dim)] block">{t('barbers.mtdAccumulated', 'MTD Accumulated')}</span>
                   </div>
                 </div>
 
@@ -342,12 +332,12 @@ export const BarbersView: React.FC = () => {
                 <div className="space-y-2 pt-2 border-t border-[var(--border-subtle)]">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
                     <Clock className="w-3.5 h-3.5 text-[#D4AF37]" />
-                    Today's Service History ({barberBookings.length})
+                    {t('barbers.todayHistory', "Today's Service History")} ({barberBookings.length})
                   </h4>
 
                   <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {barberBookings.length === 0 ? (
-                      <div className="text-xs text-[var(--text-dim)] py-3 text-center">No bookings completed yet today.</div>
+                      <div className="text-xs text-[var(--text-dim)] py-3 text-center">{t('barbers.noBookingsCompleted', 'No bookings completed yet today.')}</div>
                     ) : (
                       barberBookings.map((apt) => (
                         <div key={apt.id} className="p-2.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] flex items-center justify-between text-xs">
@@ -396,7 +386,7 @@ export const BarbersView: React.FC = () => {
                         {stat.barber.specialty}
                       </p>
                       <span className="text-[9px] font-mono text-[var(--text-dim)]">
-                        {barberBranch?.shortName} • {stat.barber.workingHours}h shift
+                        {barberBranch?.shortName} • {stat.barber.workingHours}h {t('dash.shift', 'Shift')}
                       </span>
                     </div>
                   </div>
@@ -407,20 +397,20 @@ export const BarbersView: React.FC = () => {
                     className="badge-status badge-gold text-[9px] px-2 py-0.5 hover:scale-105 transition-transform cursor-pointer"
                     title="Click to allocate commission percentage"
                   >
-                    {commissionPercentDisplay}% Cut
+                    {commissionPercentDisplay}% {t('dash.cut50', '50% Cut')}
                   </button>
                 </div>
 
                 {/* 2-Column Stats */}
                 <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-[var(--border-subtle)] text-xs">
                   <div className="p-2 bg-[var(--bg-subtle)] rounded-lg">
-                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Today Revenue</span>
-                    <span className="font-mono font-black text-sm text-[var(--text-main)]">₾{stat.revenueGenerated.toFixed(0)}</span>
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('dash.todayRevenue', 'Today Revenue')}</span>
+                    <span className="font-mono font-black text-sm text-[var(--text-main)]">₾{stat.revenueGenerated.toFixed(2)}</span>
                   </div>
 
                   <div className="p-2 bg-[var(--bg-subtle)] rounded-lg">
-                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{commissionPercentDisplay}% Earned</span>
-                    <span className="font-mono font-black text-sm text-[#D4AF37]">₾{stat.barberEarnings.toFixed(0)}</span>
+                    <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{commissionPercentDisplay}% {t('barbers.earned', 'Earned')}</span>
+                    <span className="font-mono font-black text-sm text-[#D4AF37]">₾{stat.barberEarnings.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -433,14 +423,14 @@ export const BarbersView: React.FC = () => {
                   title="Configure commission rate & percentages"
                 >
                   <Percent className="w-3 h-3" />
-                  <span>Allocate</span>
+                  <span>{t('barbers.allocate', 'Allocate')}</span>
                 </button>
 
                 <button
                   onClick={() => setExpandedBarberId(stat.barber.id)}
                   className="flex-1 py-1.5 px-2 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[#D4AF37] text-xs font-semibold text-[var(--text-main)] flex items-center justify-center gap-1 transition-all active:scale-95"
                 >
-                  <span>Dossier</span>
+                  <span>{t('barbers.dossier', 'Dossier')}</span>
                   <ChevronDown className="w-3.5 h-3.5 text-[#D4AF37]" />
                 </button>
               </div>
@@ -462,10 +452,10 @@ export const BarbersView: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="text-base font-extrabold text-[var(--text-main)]">
-                    Allocate Barber Commission & Tiers
+                    {t('barbers.modal.title', 'Allocate Barber Commission & Tiers')}
                   </h3>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                    Configure revenue split percentage and station shift parameters for staff.
+                    {t('barbers.modal.desc', 'Configure revenue split percentage and station shift parameters for staff.')}
                   </p>
                 </div>
               </div>
@@ -484,7 +474,7 @@ export const BarbersView: React.FC = () => {
               {/* Barber Selector Dropdown */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">
-                  Select Barber / Stylist:
+                  {t('barbers.modal.selectBarber', 'Select Barber / Stylist:')}
                 </label>
                 <select
                   value={selectedBarberId}
@@ -514,11 +504,11 @@ export const BarbersView: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
                     <Percent className="w-4 h-4 text-[#D4AF37]" />
-                    Commission Percentage:
+                    {t('barbers.modal.percent', 'Commission Percentage:')}
                   </span>
                   <div className="flex items-center gap-1">
                     <span className="text-2xl font-black font-mono text-[#D4AF37]">{commissionPercent}%</span>
-                    <span className="text-xs text-[var(--text-dim)] font-bold">Payout</span>
+                    <span className="text-xs text-[var(--text-dim)] font-bold">{t('barbers.payout', 'Payout')}</span>
                   </div>
                 </div>
 
@@ -536,7 +526,7 @@ export const BarbersView: React.FC = () => {
                 {/* Quick Presets */}
                 <div className="pt-2">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] block mb-1.5">
-                    Quick Tier Presets:
+                    {t('barbers.modal.quickPresets', 'Quick Tier Presets:')}
                   </span>
                   <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                     {[40, 45, 50, 55, 60, 70].map((rate) => (
@@ -560,7 +550,7 @@ export const BarbersView: React.FC = () => {
               {/* Working Hours Shift */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider block">
-                  Daily Station Shift:
+                  {t('barbers.modal.shift', 'Daily Station Shift:')}
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {[6, 7, 8, 10].map((hours) => (
@@ -574,7 +564,7 @@ export const BarbersView: React.FC = () => {
                           : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
                       }`}
                     >
-                      {hours} Hours
+                      {hours} {t('barbers.modal.hours', 'Hours')}
                     </button>
                   ))}
                 </div>
@@ -584,7 +574,7 @@ export const BarbersView: React.FC = () => {
               <div className="p-3.5 bg-[var(--bg-card)] rounded-xl border border-[var(--border-subtle)] space-y-2">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] flex items-center gap-1">
                   <Sparkles className="w-3 h-3 text-[#D4AF37]" />
-                  Live Payout Simulation (Sample ₾45.00 GEL Haircut):
+                  {t('barbers.modal.simulation', 'Live Payout Simulation (Sample ₾45.00 GEL Haircut):')}
                 </span>
                 <div className="grid grid-cols-2 gap-2 text-center text-xs">
                   <div className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
@@ -594,7 +584,7 @@ export const BarbersView: React.FC = () => {
                     </span>
                   </div>
                   <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
-                    <span className="text-[9px] uppercase font-bold text-[#D4AF37] block">Shop Gross Margin ({100 - commissionPercent}%)</span>
+                    <span className="text-[9px] uppercase font-bold text-[#D4AF37] block">{t('barbers.modal.shopMargin', 'Shop Gross Margin')} ({100 - commissionPercent}%)</span>
                     <span className="text-sm font-black font-mono text-[#D4AF37]">
                       ₾{((45 * (100 - commissionPercent)) / 100).toFixed(2)} GEL
                     </span>
@@ -609,14 +599,14 @@ export const BarbersView: React.FC = () => {
                   onClick={() => setIsCommissionModalOpen(false)}
                   className="btn-secondary text-xs py-2 px-4 font-bold"
                 >
-                  Cancel
+                  {t('action.cancel', 'Cancel')}
                 </button>
                 <button
                   type="submit"
                   className="btn-primary-gold text-xs py-2 px-5 font-bold flex items-center gap-1.5 shadow-md active:scale-95"
                 >
                   <Save className="w-3.5 h-3.5" />
-                  <span>Save & Apply Allocation</span>
+                  <span>{t('barbers.modal.save', 'Save & Apply Allocation')}</span>
                 </button>
               </div>
 

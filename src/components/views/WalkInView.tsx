@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useCash } from '../../context/CashContext';
+import { STUDENT_DISCOUNT_RATE, STUDENT_DISCOUNT_PERCENT, DEFAULT_COMMISSION_RATE, calcStudentDiscount, calcNetPrice } from '../../constants';
 import { 
   Footprints, 
   User, 
@@ -17,7 +18,8 @@ export const WalkInView: React.FC = () => {
     services, 
     branchBookings, 
     addWalkIn, 
-    todayWalkInsCount 
+    todayWalkInsCount,
+    t
   } = useCash();
 
   const [customerName, setCustomerName] = useState('');
@@ -41,8 +43,8 @@ export const WalkInView: React.FC = () => {
 
   // Price calculations
   const originalPrice = activeService?.price || 0;
-  const discountAmount = isStudent && originalPrice ? originalPrice * 0.2 : 0;
-  const finalPrice = originalPrice ? originalPrice - discountAmount : 0;
+  const discountAmount = calcStudentDiscount(originalPrice, isStudent);
+  const finalPrice = originalPrice ? calcNetPrice(originalPrice, isStudent) : 0;
 
   // Filter only walk-ins for today
   const walkInsList = branchBookings.filter((b) => b.type === 'walk-in');
@@ -91,20 +93,20 @@ export const WalkInView: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
             <Footprints className="w-5 h-5 text-amber-500 dark:text-amber-400" />
-            Walk-in Express Register
+            {t('walkin.expressRegister', 'Walk-in Express Register')}
           </h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Instant chair-side check-in. Add customer, assign barber, record student discount, complete service, and automatically update revenue.
+            {t('walkin.expressSubtitle', 'Instant chair-side check-in. Add customer, assign barber, record student discount, complete service, and automatically update revenue.')}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-xs flex items-center gap-2">
-            <span className="text-[var(--text-muted)]">Walk-ins Today:</span>
+            <span className="text-[var(--text-muted)]">{t('walkin.walkinsToday', 'Walk-ins Today:')}</span>
             <span className="font-mono font-black text-amber-500 dark:text-amber-400 text-sm">{todayWalkInsCount}</span>
           </div>
           <div className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-xs flex items-center gap-2">
-            <span className="text-[var(--text-muted)]">Walk-in Sales:</span>
+            <span className="text-[var(--text-muted)]">{t('walkin.walkinSales', 'Walk-in Sales:')}</span>
             <span className="font-mono font-black text-[#D4AF37] text-sm">₾{walkInTotalRevenue.toFixed(2)} GEL</span>
           </div>
         </div>
@@ -120,12 +122,12 @@ export const WalkInView: React.FC = () => {
               <span className="font-bold text-[var(--text-main)]">{successToast.barber}</span>!
               <div className="text-[11px] text-[var(--text-muted)] mt-0.5">
                 +₾{successToast.amount.toFixed(2)} GEL recorded ({successToast.method}).
-                {successToast.isStudent && ' 20% Student Discount applied.'} 50% Barber cut: ₾{(successToast.amount * 0.5).toFixed(2)} GEL credited.
+                {successToast.isStudent && ` ${STUDENT_DISCOUNT_PERCENT}% Student Discount applied.`} {(branchBarbers.find(b => b.name === successToast.barber)?.commissionRate || DEFAULT_COMMISSION_RATE) * 100}% Barber cut: ₾{(successToast.amount * (branchBarbers.find(b => b.name === successToast.barber)?.commissionRate || DEFAULT_COMMISSION_RATE)).toFixed(2)} GEL credited.
               </div>
             </div>
           </div>
           <span className="px-2.5 py-1 rounded bg-emerald-500/10 font-mono font-bold text-emerald-500 border border-emerald-500/30">
-            Live Synced
+            {t('walkin.liveSynced', 'Live Synced')}
           </span>
         </div>
       )}
@@ -139,10 +141,10 @@ export const WalkInView: React.FC = () => {
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
               <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
                 <Scissors className="w-4 h-4 text-[#D4AF37]" />
-                Serve Walk-In Client Now
+                {t('walkin.serveNow', 'Serve Walk-In Client Now')}
               </h3>
               <span className="text-[10px] font-bold text-amber-500 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">
-                1-Click Complete
+                {t('walkin.oneClickComplete', '1-Click Complete')}
               </span>
             </div>
 
@@ -152,7 +154,7 @@ export const WalkInView: React.FC = () => {
               <div className="space-y-3">
                 <div>
                   <label className="block text-[var(--text-muted)] font-semibold mb-1">
-                    Customer Name *
+                    {t('walkin.customerName', 'Customer Name *')}
                   </label>
                   <div className="relative">
                     <User className="w-3.5 h-3.5 text-[var(--text-dim)] absolute left-3 top-1/2 -translate-y-1/2" />
@@ -169,7 +171,7 @@ export const WalkInView: React.FC = () => {
 
                 <div>
                   <label className="block text-[var(--text-muted)] font-semibold mb-1">
-                    Customer Phone (Optional)
+                    {t('walkin.customerPhone', 'Customer Phone (Optional)')}
                   </label>
                   <input
                     type="tel"
@@ -192,13 +194,13 @@ export const WalkInView: React.FC = () => {
                   />
                   <span className="flex items-center gap-1.5">
                     <GraduationCap className="w-4 h-4 text-[#D4AF37]" />
-                    Student Discount (20% Off: Hair + Beard = 36 GEL)
+                    {t('walkin.studentDiscount', `Student Discount (${STUDENT_DISCOUNT_PERCENT}% Off: ${activeService?.name || 'Service'} = ₾${calcNetPrice(originalPrice, true).toFixed(2)})`)}
                   </span>
                 </label>
 
                 {isStudent && (
                   <div className="pt-1.5 border-t border-[var(--border-subtle)] space-y-1 animate-in fade-in">
-                    <label className="block text-[11px] text-[var(--text-muted)] font-medium">Student ID Proof / Card #</label>
+                    <label className="block text-[11px] text-[var(--text-muted)] font-medium">{t('walkin.studentProof', 'Student ID Proof / Card #')}</label>
                     <input
                       type="text"
                       placeholder="e.g. TSU-2024-8192 or Iliauni Card"
@@ -213,7 +215,7 @@ export const WalkInView: React.FC = () => {
               {/* Allergies */}
               <div>
                 <label className="block text-[var(--text-muted)] font-semibold mb-1">
-                  Allergies / Special Notes
+                  {t('walkin.allergies', 'Allergies / Special Notes')}
                 </label>
                 <input
                   type="text"
@@ -227,7 +229,7 @@ export const WalkInView: React.FC = () => {
               {/* Barber Selector */}
               <div>
                 <label className="block text-[var(--text-muted)] font-semibold mb-1.5">
-                  Select Barber Serving Customer *
+                  {t('walkin.selectBarber', 'Select Barber Serving Customer *')}
                 </label>
                 <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                   {branchBarbers.map((b) => {
@@ -264,12 +266,12 @@ export const WalkInView: React.FC = () => {
               {/* Service Selector */}
               <div>
                 <label className="block text-[var(--text-muted)] font-semibold mb-1.5">
-                  Select Service *
+                  {t('walkin.selectService', 'Select Service *')}
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {services.map((s) => {
                     const isSelected = selectedServiceId === s.id;
-                    const priceDisplay = s.price !== null ? (isStudent ? `₾${s.price - s.price * 0.2}` : `₾${s.price}`) : 'TBD';
+                    const priceDisplay = s.price !== null ? (isStudent ? `₾${calcNetPrice(s.price, isStudent).toFixed(2)}` : `₾${s.price}`) : t('walkin.priceTbd', 'TBD');
 
                     return (
                       <div
@@ -286,7 +288,7 @@ export const WalkInView: React.FC = () => {
                             {s.name}
                           </div>
                           <div className="text-[10px] text-[var(--text-dim)]">
-                            {s.duration} mins
+                            {s.duration} {t('walkin.mins', 'mins')}
                           </div>
                         </div>
                         <span className="font-mono font-extrabold text-sm text-[#D4AF37]">
@@ -301,7 +303,7 @@ export const WalkInView: React.FC = () => {
               {/* Payment Method */}
               <div>
                 <label className="block text-[var(--text-muted)] font-semibold mb-1.5">
-                  Payment Method *
+                  {t('walkin.paymentMethod', 'Payment Method *')}
                 </label>
                 <div className="grid grid-cols-2 gap-3">
                   <div
@@ -313,7 +315,7 @@ export const WalkInView: React.FC = () => {
                     }`}
                   >
                     <Banknote className="w-4 h-4" />
-                    <span>Cash</span>
+                    <span>{t('payment.cash', 'Cash')}</span>
                   </div>
 
                   <div
@@ -325,7 +327,7 @@ export const WalkInView: React.FC = () => {
                     }`}
                   >
                     <CreditCard className="w-4 h-4" />
-                    <span>Card / POS</span>
+                    <span>{t('payment.card', 'Card / POS')}</span>
                   </div>
                 </div>
               </div>
@@ -333,9 +335,9 @@ export const WalkInView: React.FC = () => {
               {/* Order Summary & Submit */}
               <div className="pt-2 border-t border-[var(--border-subtle)]">
                 <div className="flex items-center justify-between mb-3 text-sm">
-                  <span className="text-[var(--text-muted)] font-medium">Ticket Total:</span>
+                  <span className="text-[var(--text-muted)] font-medium">{t('walkin.ticketTotal', 'Ticket Total:')}</span>
                   <span className="font-mono text-xl font-black text-[#D4AF37]">
-                    {finalPrice ? `₾${finalPrice.toFixed(2)} GEL` : 'Price TBD'}
+                    {finalPrice ? `₾${finalPrice.toFixed(2)} GEL` : t('walkin.priceTbd', 'Price TBD')}
                   </span>
                 </div>
                 <button
@@ -343,7 +345,7 @@ export const WalkInView: React.FC = () => {
                   className="w-full btn-primary-gold py-2.5 font-black flex items-center justify-center gap-2 shadow-md active:scale-[0.99]"
                 >
                   <CheckCircle2 className="w-4 h-4" />
-                  <span>Complete Service & Record Revenue</span>
+                  <span>{t('walkin.completeBtn', 'Complete Service & Record Revenue')}</span>
                 </button>
               </div>
 
@@ -357,17 +359,17 @@ export const WalkInView: React.FC = () => {
             <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
               <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
                 <Clock className="w-4 h-4 text-[#D4AF37]" />
-                Completed Walk-Ins Today ({walkInsList.length})
+                {t('walkin.completedToday', 'Completed Walk-Ins Today')} ({walkInsList.length})
               </h3>
               <span className="text-xs font-mono font-bold text-emerald-500">
-                Total: ₾{walkInTotalRevenue.toFixed(2)} GEL
+                {t('dash.total', 'Total')}: ₾{walkInTotalRevenue.toFixed(2)} GEL
               </span>
             </div>
 
             <div className="space-y-2.5 max-h-[560px] overflow-y-auto pr-1">
               {walkInsList.length === 0 ? (
                 <div className="p-8 text-center text-xs text-[var(--text-dim)] border border-dashed border-[var(--border-subtle)] rounded-xl">
-                  No walk-in clients recorded yet today.
+                  {t('walkin.noWalkinsToday', 'No walk-in clients recorded yet today.')}
                 </div>
               ) : (
                 walkInsList.map((w) => (
@@ -380,7 +382,7 @@ export const WalkInView: React.FC = () => {
                         <span className="font-mono font-bold text-[var(--text-main)]">{w.ticketNumber}</span>
                         <span className="font-extrabold text-[var(--text-main)]">{w.customerName}</span>
                         {w.isStudent && (
-                          <span className="badge-status badge-gold">Student -20%</span>
+                          <span className="badge-status badge-gold">{t('walkin.student20', 'Student -20%')}</span>
                         )}
                       </div>
                       <div className="text-[11px] text-[var(--text-muted)] mt-1">
@@ -388,7 +390,7 @@ export const WalkInView: React.FC = () => {
                       </div>
                       {w.allergies && w.allergies !== 'None' && (
                         <div className="text-[10px] text-rose-500 mt-0.5">
-                          Allergies: {w.allergies}
+                          {t('cust.th.allergies', 'Allergies')}: {w.allergies}
                         </div>
                       )}
                     </div>

@@ -15,7 +15,8 @@ export const BranchesView: React.FC = () => {
     barbers, 
     bookings, 
     currentBranch, 
-    setCurrentBranch 
+    setCurrentBranch,
+    t
   } = useCash();
 
   // Compute metrics for each branch
@@ -61,20 +62,20 @@ export const BranchesView: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
             <Building2 className="w-5 h-5 text-[#D4AF37]" />
-            Multi-Branch Comparison & Operations
+            {t('branches.comparisonTitle', 'Multi-Branch Comparison & Operations')}
           </h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Compare traffic, revenue, and barber performance across Marjane, Dighomi, and Saburtalo branches.
+            {t('branches.comparisonSubtitle', 'Compare traffic, revenue, and barber performance across Marjane, Dighomi, and Saburtalo branches.')}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
           <div className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-xs flex items-center gap-2">
-            <span className="text-[var(--text-muted)]">Network Clients:</span>
+            <span className="text-[var(--text-muted)]">{t('branches.networkClients', 'Network Clients:')}</span>
             <span className="font-mono font-black text-[var(--text-main)] text-sm">{totalNetworkCustomers}</span>
           </div>
           <div className="px-3.5 py-1.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-xs flex items-center gap-2">
-            <span className="text-[var(--text-muted)]">Network Revenue:</span>
+            <span className="text-[var(--text-muted)]">{t('branches.networkRevenue', 'Network Revenue:')}</span>
             <span className="font-mono font-black text-[#D4AF37] text-sm">₾{totalNetworkRevenue.toFixed(2)} GEL</span>
           </div>
         </div>
@@ -99,7 +100,7 @@ export const BranchesView: React.FC = () => {
                     <h3 className="font-extrabold text-base text-[var(--text-main)]">{branch.name}</h3>
                     {isCurrent && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">
-                        Active
+                        {t('status.active', 'Active')}
                       </span>
                     )}
                   </div>
@@ -110,32 +111,32 @@ export const BranchesView: React.FC = () => {
                 </div>
 
                 <span className="badge-status badge-neutral">
-                  {barberCount} Chairs
+                  {barberCount} {t('branches.chairs', 'Chairs')}
                 </span>
               </div>
 
               {/* Metrics Grid */}
               <div className="grid grid-cols-2 gap-2 p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)] text-xs">
                 <div>
-                  <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">Today's Revenue</span>
+                  <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">{t('branches.todayRevenue', "Today's Revenue")}</span>
                   <span className="text-lg font-black text-[#D4AF37] font-mono">
                     ₾{revenue.toFixed(2)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">Clients Served</span>
+                  <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">{t('branches.clientsServed', 'Clients Served')}</span>
                   <span className="text-lg font-black text-[var(--text-main)] font-mono">
                     {customersCount}
                   </span>
                 </div>
                 <div className="pt-2 border-t border-[var(--border-subtle)]">
-                  <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">Avg Ticket</span>
+                  <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">{t('branches.avgTicket', 'Avg Ticket')}</span>
                   <span className="text-xs font-bold text-emerald-500 dark:text-emerald-400 font-mono">
                     ₾{avgTicket.toFixed(1)} GEL
                   </span>
                 </div>
                 <div className="pt-2 border-t border-[var(--border-subtle)]">
-                  <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">Top Barber</span>
+                  <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold block">{t('branches.topBarber', 'Top Barber')}</span>
                   <span className="text-xs font-bold text-[var(--text-main)] truncate block">
                     {topBarber.name.split(' ')[0]}
                   </span>
@@ -155,11 +156,11 @@ export const BranchesView: React.FC = () => {
                   {isCurrent ? (
                     <>
                       <CheckCircle2 className="w-3.5 h-3.5 text-[#D4AF37]" />
-                      <span>Currently Active Branch</span>
+                      <span>{t('branches.currentlyActive', 'Currently Active Branch')}</span>
                     </>
                   ) : (
                     <>
-                      <span>Switch to this Branch</span>
+                      <span>{t('branches.switchToThis', 'Switch to this Branch')}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </>
                   )}
@@ -176,22 +177,22 @@ export const BranchesView: React.FC = () => {
         <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
           <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-[#D4AF37]" />
-            Branch Performance & Traffic Benchmark
+            {t('branches.trafficBenchmark', 'Branch Performance & Traffic Benchmark')}
           </h3>
-          <span className="text-xs text-[var(--text-muted)]">Tbilisi Network</span>
+          <span className="text-xs text-[var(--text-muted)]">{t('branches.tbilisiNetwork', 'Tbilisi Network')}</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs text-[var(--text-main)]">
             <thead className="text-[10px] uppercase font-bold text-[var(--text-dim)] bg-[var(--bg-subtle)] border-y border-[var(--border-subtle)]">
               <tr>
-                <th className="py-3 px-4">Branch</th>
-                <th className="py-3 px-4">Address</th>
-                <th className="py-3 px-4 text-center">Barbers</th>
-                <th className="py-3 px-4 text-center">Clients Today</th>
-                <th className="py-3 px-4 text-right">Revenue (GEL)</th>
-                <th className="py-3 px-4 text-right">Avg Ticket</th>
-                <th className="py-3 px-4 text-right">Action</th>
+                <th className="py-3 px-4">{t('branches.th.branch', 'Branch')}</th>
+                <th className="py-3 px-4">{t('branches.th.address', 'Address')}</th>
+                <th className="py-3 px-4 text-center">{t('branches.th.barbers', 'Barbers')}</th>
+                <th className="py-3 px-4 text-center">{t('branches.th.clientsToday', 'Clients Today')}</th>
+                <th className="py-3 px-4 text-right">{t('branches.th.revenue', 'Revenue (GEL)')}</th>
+                <th className="py-3 px-4 text-right">{t('branches.th.avgTicket', 'Avg Ticket')}</th>
+                <th className="py-3 px-4 text-right">{t('branches.th.action', 'Action')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)]">
@@ -211,7 +212,7 @@ export const BranchesView: React.FC = () => {
                       onClick={() => setCurrentBranch(branch.id as BranchId)}
                       className="px-2.5 py-1 rounded bg-[var(--bg-subtle)] hover:bg-[#18181B] dark:hover:bg-[#27272A] hover:text-[#D4AF37] text-[11px] font-semibold text-[var(--text-muted)] border border-[var(--border-subtle)] transition-all"
                     >
-                      Select
+                      {t('branches.select', 'Select')}
                     </button>
                   </td>
                 </tr>

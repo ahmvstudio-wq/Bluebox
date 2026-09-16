@@ -4,26 +4,25 @@ import { BranchId } from '../types';
 import { 
   LayoutDashboard, 
   Scissors, 
-  Users, 
   CalendarCheck2, 
-  Footprints, 
   Wallet, 
+  Receipt,
   Building2,
   LogOut, 
   RotateCcw, 
-  ChevronDown,
-  Menu,
-  X,
-  Sun,
-  Moon
+  ChevronDown, 
+  Menu, 
+  X, 
+  Sun, 
+  Moon,
+  Globe
 } from 'lucide-react';
 
 export type DemoTab = 
   | 'dashboard' 
   | 'barbers' 
-  | 'customers' 
   | 'booking' 
-  | 'walkin' 
+  | 'expenses'
   | 'finance' 
   | 'branches';
 
@@ -46,15 +45,17 @@ export const Sidebar: React.FC<SidebarProps> = ({
     branches, 
     barbers, 
     branchBarbers, 
-    customers, 
     todayBookingsCount, 
-    todayWalkInsCount, 
+    expenses,
     currentUser, 
     loginAsBarber, 
     logout, 
     resetToDefaultData,
     theme,
-    toggleTheme
+    toggleTheme,
+    language,
+    toggleLanguage,
+    t
   } = useCash();
 
   const [internalDrawerOpen, setInternalDrawerOpen] = useState(false);
@@ -77,52 +78,45 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems = [
     { 
       id: 'dashboard' as DemoTab, 
-      label: '1. Dashboard', 
-      shortLabel: 'Overview',
+      label: t('nav.dashboard'), 
+      shortLabel: t('nav.short.dashboard'),
       icon: LayoutDashboard, 
       badge: 'Live' 
     },
     { 
       id: 'barbers' as DemoTab, 
-      label: '2. Barber Performance', 
-      shortLabel: 'Barbers',
+      label: t('nav.barbers'), 
+      shortLabel: t('nav.short.barbers'),
       icon: Scissors, 
       badge: `${branchBarbers.length}` 
     },
     { 
-      id: 'customers' as DemoTab, 
-      label: '3. Customers', 
-      shortLabel: 'Clients',
-      icon: Users, 
-      badge: `${customers.length}` 
-    },
-    { 
       id: 'booking' as DemoTab, 
-      label: '4. Booking Pipeline', 
-      shortLabel: 'Pipeline',
+      label: t('nav.booking'), 
+      shortLabel: t('nav.short.booking'),
       icon: CalendarCheck2, 
       badge: `${todayBookingsCount}` 
     },
     { 
-      id: 'walkin' as DemoTab, 
-      label: '5. Walk-In POS', 
-      shortLabel: 'Walk-In',
-      icon: Footprints, 
-      badge: `${todayWalkInsCount}` 
+      id: 'expenses' as DemoTab, 
+      label: t('nav.expenses'), 
+      shortLabel: t('nav.short.expenses'),
+      icon: Receipt, 
+      badge: `${expenses.length}` 
     },
     { 
       id: 'finance' as DemoTab, 
-      label: '6. Financial Overview', 
-      shortLabel: 'Finance',
+      label: t('nav.finance'), 
+      shortLabel: t('nav.short.finance'),
       icon: Wallet, 
       badge: '₾' 
     },
     { 
       id: 'branches' as DemoTab, 
-      label: '7. Branches', 
-      shortLabel: 'Branches',
+      label: t('nav.branches'), 
+      shortLabel: t('nav.short.branches'),
       icon: Building2, 
-      badge: '3 Shops' 
+      badge: '3' 
     },
   ];
 
@@ -139,28 +133,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <img
               src="/logo.jpg"
               alt="Blackbox Barber"
-              className="w-10 h-10 rounded-full border border-[#D4AF37] object-cover shadow-sm"
+              className="w-10 h-10 rounded-full border border-[#D4AF37] object-cover shadow-sm shrink-0"
             />
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <h1 className="font-black text-base tracking-wide text-[var(--text-main)] font-['Inter',sans-serif]">
-                  Blackbox
+                <h1 className="font-black text-base tracking-wide text-[var(--text-main)] truncate">
+                  {t('brand.name')}
                 </h1>
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40 tracking-wider">
-                  BARBER
+                <span className="text-[10px] font-black px-2 py-0.5 rounded-md bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40 tracking-wider shrink-0">
+                  {t('brand.sub')}
                 </span>
               </div>
-              <p className="text-[11px] text-[var(--text-muted)]">
-                Operations System
+              <p className="text-[11px] text-[var(--text-muted)] truncate">
+                {t('brand.operations')}
               </p>
             </div>
           </div>
         </div>
 
-        {/* Main Navigation (7 Essential Features) */}
+        {/* Main Navigation (8 Dedicated Admin Modules) */}
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
           <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)]">
-            Operations
+            {t('nav.operations')}
           </div>
 
           {navItems.map((item) => {
@@ -172,8 +166,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => setActiveTab(item.id)}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-[0.98] relative overflow-hidden group ${
                   isActive
-                    ? 'bg-[#18181B] text-white dark:bg-[#27272A] dark:text-white font-bold border border-[#3F3F46] shadow-sm before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#D4AF37] before:rounded-r'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-subtle)] hover:translate-x-0.5'
+                    ? 'bg-[#18181B] text-white dark:bg-[#27272A] dark:text-white font-bold border border-[#3F3F46] shadow-sm before:absolute before:left-0 before:top-2 before:bottom-2 before:w-1 before:bg-[#D4AF37] before:rounded-r rtl:before:left-auto rtl:before:right-0 rtl:before:rounded-l rtl:before:rounded-r-none'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-subtle)] hover:translate-x-0.5 rtl:hover:-translate-x-0.5'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -195,10 +189,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
             );
           })}
 
+          {/* Language Switcher & Theme Control */}
+          <div className="pt-3 border-t border-[var(--border-subtle)] px-2 space-y-1.5">
+            <button
+              onClick={toggleLanguage}
+              className="w-full flex items-center justify-between py-2 px-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[#D4AF37] text-xs font-bold text-[var(--text-main)] transition-all shadow-xs active:scale-[0.98]"
+              title="Toggle English / Arabic"
+            >
+              <div className="flex items-center gap-2">
+                <Globe className="w-4 h-4 text-[#D4AF37]" />
+                <span>{t('lang.select')}</span>
+              </div>
+              <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--bg-subtle)] text-[#D4AF37] border border-[var(--border-subtle)] font-mono font-bold">
+                {t('lang.toggle')}
+              </span>
+            </button>
+          </div>
+
           {/* Custom Luxury Barber Switcher Dropdown */}
-          <div className="mt-4 pt-3 border-t border-[var(--border-subtle)] px-2 space-y-1.5" ref={dropdownRef}>
+          <div className="pt-2 px-2 space-y-1.5" ref={dropdownRef}>
             <div className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)]">
-              Switch Staff View
+              {t('auth.switchStaffView')}
             </div>
 
             <div className="relative">
@@ -207,14 +218,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => setIsBarberMenuOpen(!isBarberMenuOpen)}
                 className="w-full flex items-center justify-between py-2 px-2.5 bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] hover:border-[#D4AF37] rounded-xl text-xs text-[var(--text-main)] font-medium transition-all shadow-xs active:scale-[0.98]"
               >
-                <span className="text-[var(--text-muted)] truncate">Switch to Barber Persona...</span>
+                <span className="text-[var(--text-muted)] truncate">{t('auth.switchBarberPersona')}</span>
                 <ChevronDown className={`w-3.5 h-3.5 text-[var(--text-dim)] transition-transform duration-200 shrink-0 ${isBarberMenuOpen ? 'rotate-180 text-[#D4AF37]' : ''}`} />
               </button>
 
               {isBarberMenuOpen && (
                 <div className="absolute bottom-full left-0 right-0 mb-1 bg-[var(--bg-card)] border border-[var(--border-card)] rounded-xl shadow-2xl py-1.5 z-50 max-h-64 overflow-y-auto animate-scale-in">
                   <div className="px-3 py-1.5 text-[10px] uppercase font-bold text-[var(--text-dim)] border-b border-[var(--border-subtle)]">
-                    Select Barber Persona
+                    {t('auth.selectBarberPersona')}
                   </div>
                   {barbers.map((b) => (
                     <button
@@ -224,7 +235,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         setIsBarberMenuOpen(false);
                         loginAsBarber(b.id);
                       }}
-                      className="w-full flex items-center justify-between px-3 py-2 text-left hover:bg-[var(--bg-subtle)] transition-colors group"
+                      className="w-full flex items-center justify-between px-3 py-2 text-left rtl:text-right hover:bg-[var(--bg-subtle)] transition-colors group"
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <img
@@ -241,7 +252,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                           </span>
                         </div>
                       </div>
-                      <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-dim)] border border-[var(--border-subtle)] shrink-0 ml-1">
+                      <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 rounded bg-[var(--bg-subtle)] text-[var(--text-dim)] border border-[var(--border-subtle)] shrink-0 ml-1 rtl:mr-1 rtl:ml-0">
                         {b.branchId}
                       </span>
                     </button>
@@ -255,7 +266,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="px-2 pt-1">
             <button
               onClick={() => {
-                if (window.confirm('Reset all bookings, balances, and records back to default state?')) {
+                if (window.confirm(t('nav.restoreConfirm'))) {
                   resetToDefaultData();
                 }
               }}
@@ -263,7 +274,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title="Reset storage to default state"
             >
               <RotateCcw className="w-3 h-3 text-[#D4AF37]" />
-              <span>Restore Default Records</span>
+              <span>{t('nav.restoreDefault')}</span>
             </button>
           </div>
 
@@ -289,7 +300,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   {currentUser?.name || 'Admin'}
                 </span>
                 <span className="text-[10px] text-[var(--text-muted)] font-medium block">
-                  Store Owner
+                  {t('brand.owner')}
                 </span>
               </div>
             </div>
@@ -297,7 +308,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               onClick={logout}
               className="p-1.5 text-[var(--text-muted)] hover:text-rose-500 hover:bg-[var(--bg-subtle)] rounded-lg transition-all text-xs font-medium flex items-center gap-1 shrink-0"
-              title="Sign Out"
+              title={t('auth.signOut')}
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
@@ -313,7 +324,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         aria-label="Mobile Navigation" 
         className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-sidebar)]/95 backdrop-blur-md border-t border-[var(--border-subtle)] pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.15)] transition-colors"
       >
-        <div className="grid grid-cols-5 h-16 items-center px-1 max-w-lg mx-auto">
+        <div className="grid grid-cols-4 h-16 items-center px-1 max-w-lg mx-auto">
           
           {/* Tab 1: Dashboard */}
           <button
@@ -326,7 +337,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             }`}
           >
             <LayoutDashboard className={`w-5 h-5 ${activeTab === 'dashboard' ? 'text-[#D4AF37]' : 'text-[var(--text-dim)]'}`} />
-            <span className="text-[10px] tracking-tight">Overview</span>
+            <span className="text-[10px] tracking-tight">{t('nav.short.dashboard')}</span>
           </button>
 
           {/* Tab 2: Booking Pipeline */}
@@ -347,39 +358,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </span>
               )}
             </div>
-            <span className="text-[10px] tracking-tight">Pipeline</span>
+            <span className="text-[10px] tracking-tight">{t('nav.short.booking')}</span>
           </button>
 
-          {/* Tab 3: Walk-In POS (Prominent Hero Action Pill) */}
+          {/* Tab 4: Expenses & Finance */}
           <button
             type="button"
-            onClick={() => setActiveTab('walkin')}
-            className="flex flex-col items-center justify-center -mt-3 group transition-transform active:scale-90"
-          >
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg border transition-all ${
-              activeTab === 'walkin'
-                ? 'bg-[#D4AF37] text-black border-[#D4AF37] shadow-[#D4AF37]/30 scale-105'
-                : 'bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border-[#D4AF37]/50 group-hover:border-[#D4AF37]'
-            }`}>
-              <Footprints className="w-5 h-5" />
-            </div>
-            <span className={`text-[10px] font-bold mt-1 ${activeTab === 'walkin' ? 'text-[#D4AF37]' : 'text-[var(--text-muted)]'}`}>
-              Walk-in
-            </span>
-          </button>
-
-          {/* Tab 4: Finance */}
-          <button
-            type="button"
-            onClick={() => setActiveTab('finance')}
+            onClick={() => setActiveTab('expenses')}
             className={`flex flex-col items-center justify-center h-full gap-1 transition-all active:scale-90 ${
-              activeTab === 'finance'
+              activeTab === 'expenses'
                 ? 'text-[#D4AF37] font-bold'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
-            <Wallet className={`w-5 h-5 ${activeTab === 'finance' ? 'text-[#D4AF37]' : 'text-[var(--text-dim)]'}`} />
-            <span className="text-[10px] tracking-tight">Finance</span>
+            <Receipt className={`w-5 h-5 ${activeTab === 'expenses' ? 'text-[#D4AF37]' : 'text-[var(--text-dim)]'}`} />
+            <span className="text-[10px] tracking-tight">{t('nav.short.expenses')}</span>
           </button>
 
           {/* Tab 5: More / Menu (Opens Mobile Drawer) */}
@@ -387,18 +380,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
             type="button"
             onClick={() => setDrawerOpen(true)}
             className={`flex flex-col items-center justify-center h-full gap-1 transition-all active:scale-90 ${
-              isDrawerOpen || ['barbers', 'customers', 'branches'].includes(activeTab)
+              isDrawerOpen || ['barbers', 'finance', 'branches'].includes(activeTab)
                 ? 'text-[#D4AF37] font-bold'
                 : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
             }`}
           >
             <div className="relative">
-              <Menu className={`w-5 h-5 ${['barbers', 'customers', 'branches'].includes(activeTab) ? 'text-[#D4AF37]' : 'text-[var(--text-dim)]'}`} />
-              {['barbers', 'customers', 'branches'].includes(activeTab) && (
+              <Menu className={`w-5 h-5 ${['barbers', 'finance', 'branches'].includes(activeTab) ? 'text-[#D4AF37]' : 'text-[var(--text-dim)]'}`} />
+              {['barbers', 'finance', 'branches'].includes(activeTab) && (
                 <span className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-[#D4AF37]"></span>
               )}
             </div>
-            <span className="text-[10px] tracking-tight">Menu</span>
+            <span className="text-[10px] tracking-tight">{t('nav.short.menu')}</span>
           </button>
 
         </div>
@@ -428,12 +421,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 />
                 <div>
                   <div className="flex items-center gap-1.5">
-                    <span className="font-extrabold text-sm tracking-wide text-[var(--text-main)]">Blackbox</span>
+                    <span className="font-extrabold text-sm tracking-wide text-[var(--text-main)]">{t('brand.name')}</span>
                     <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">
-                      BARBER
+                      {t('brand.sub')}
                     </span>
                   </div>
-                  <p className="text-[10px] text-[var(--text-muted)]">Operations Menu</p>
+                  <p className="text-[10px] text-[var(--text-muted)]">{t('nav.allOperations')}</p>
                 </div>
               </div>
 
@@ -450,7 +443,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Quick Branch Selector Inside Drawer */}
             <div className="p-3 bg-[var(--bg-subtle)]/50 border-b border-[var(--border-subtle)]">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] block mb-1.5">
-                Active Branch
+                {t('branch.active')}
               </span>
               <div className="grid grid-cols-3 gap-1">
                 {branches.map((b) => {
@@ -466,7 +459,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       }`}
                     >
                       <span className="block truncate">{b.shortName}</span>
-                      <span className="text-[9px] font-normal text-[var(--text-dim)]">{b.barberCount} staff</span>
+                      <span className="text-[9px] font-normal text-[var(--text-dim)]">{b.barberCount} {t('branch.staff')}</span>
                     </button>
                   );
                 })}
@@ -476,7 +469,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* Navigation List */}
             <div className="flex-1 p-3 space-y-1 overflow-y-auto">
               <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)]">
-                All Operations
+                {t('nav.allOperations')}
               </div>
 
               {navItems.map((item) => {
@@ -510,10 +503,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 );
               })}
 
+              {/* Language Switcher Button in Mobile Drawer */}
+              <div className="pt-3 border-t border-[var(--border-subtle)]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleLanguage();
+                  }}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-xs font-bold text-[var(--text-main)]"
+                >
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-[#D4AF37]" />
+                    <span>{t('lang.select')}</span>
+                  </div>
+                  <span className="text-[11px] px-2 py-0.5 rounded bg-[var(--bg-card)] text-[#D4AF37] border border-[var(--border-subtle)] font-mono">
+                    {t('lang.toggle')}
+                  </span>
+                </button>
+              </div>
+
               {/* Staff Switcher Section */}
               <div className="pt-3 border-t border-[var(--border-subtle)]">
                 <span className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] block">
-                  Switch to Barber Persona
+                  {t('auth.switchBarberPersona')}
                 </span>
                 <div className="space-y-1 mt-1 max-h-40 overflow-y-auto">
                   {barbers.map((b) => (
@@ -523,7 +535,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         setDrawerOpen(false);
                         loginAsBarber(b.id);
                       }}
-                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-subtle)] text-left group"
+                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-[var(--bg-subtle)] text-left rtl:text-right group"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <img src={b.avatar} alt={b.name} className="w-5 h-5 rounded-full object-cover shrink-0" />
@@ -544,15 +556,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 >
                   <div className="flex items-center gap-2">
                     {theme === 'dark' ? <Sun className="w-4 h-4 text-[#D4AF37]" /> : <Moon className="w-4 h-4 text-zinc-500" />}
-                    <span>Appearance</span>
+                    <span>{t('theme.appearance')}</span>
                   </div>
-                  <span className="text-[11px] text-[var(--text-dim)] capitalize">{theme} Mode</span>
+                  <span className="text-[11px] text-[var(--text-dim)] capitalize">{theme === 'dark' ? t('theme.dark') : t('theme.light')}</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => {
-                    if (window.confirm('Reset all bookings, balances, and records back to default state?')) {
+                    if (window.confirm(t('nav.restoreConfirm'))) {
                       resetToDefaultData();
                       setDrawerOpen(false);
                     }
@@ -560,7 +572,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="w-full py-2 px-3 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] text-xs font-medium text-[var(--text-dim)] hover:text-[var(--text-main)] flex items-center justify-center gap-2"
                 >
                   <RotateCcw className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>Restore Default Records</span>
+                  <span>{t('nav.restoreDefault')}</span>
                 </button>
               </div>
 
@@ -574,7 +586,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </div>
                 <div className="min-w-0">
                   <span className="text-xs font-bold text-[var(--text-main)] truncate block">{currentUser?.name || 'Admin'}</span>
-                  <span className="text-[10px] text-[var(--text-muted)] block">Store Owner</span>
+                  <span className="text-[10px] text-[var(--text-muted)] block">{t('brand.owner')}</span>
                 </div>
               </div>
 
@@ -587,7 +599,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg flex items-center gap-1 text-xs font-semibold"
               >
                 <LogOut className="w-4 h-4" />
-                <span>Exit</span>
+                <span>{t('auth.exit')}</span>
               </button>
             </div>
 

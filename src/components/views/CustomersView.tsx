@@ -10,12 +10,7 @@ import {
   TrendingUp, 
   Calendar,
   X,
-  UserCheck,
-  CheckCircle2,
-  Filter,
   ArrowRight,
-  Clock,
-  Sparkles,
   CalendarRange,
   RotateCcw
 } from 'lucide-react';
@@ -25,7 +20,7 @@ type DateFilterShortcut = 'all' | 'today' | 'yesterday' | 'week' | 'month' | 'cu
 type CategoryFilter = 'all' | 'students' | 'allergies' | 'vip';
 
 export const CustomersView: React.FC = () => {
-  const { customers } = useCash();
+  const { customers, t } = useCash();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<CategoryFilter>('all');
   const [dateShortcut, setDateShortcut] = useState<DateFilterShortcut>('all');
@@ -167,20 +162,20 @@ export const CustomersView: React.FC = () => {
   const dateFilterLabel = useMemo(() => {
     switch (dateShortcut) {
       case 'today':
-        return 'Today (Sep 15, 2026)';
+        return t('cust.today', '⚡ Today') + ' (Sep 15, 2026)';
       case 'yesterday':
-        return 'Yesterday (Sep 14, 2026)';
+        return t('cust.yesterday', '⏮️ Yesterday') + ' (Sep 14, 2026)';
       case 'week':
-        return 'This Week (Sep 08 – Sep 15, 2026)';
+        return t('cust.thisWeek', '📆 This Week') + ' (Sep 08 – Sep 15, 2026)';
       case 'month':
-        return 'This Month (Sep 2026)';
+        return t('cust.thisMonth', '🗓️ This Month') + ' (Sep 2026)';
       case 'custom':
-        return `Custom Range: ${startDate} to ${endDate}`;
+        return `${t('cust.customRange', 'Custom Range')}: ${startDate} - ${endDate}`;
       case 'all':
       default:
-        return 'All Time History';
+        return t('cust.allTime', 'All Time');
     }
-  }, [dateShortcut, startDate, endDate]);
+  }, [dateShortcut, startDate, endDate, t]);
 
   return (
     <div className="space-y-6">
@@ -190,10 +185,10 @@ export const CustomersView: React.FC = () => {
         <div>
           <h2 className="text-lg font-bold text-[var(--text-main)] flex items-center gap-2">
             <Users className="w-5 h-5 text-[#D4AF37]" />
-            Customer Directory & Profiles
+            {t('cust.title', 'Customer Directory & Profiles')}
           </h2>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            Client dossiers, visit histories by date point in time, student discounts, and allergy safety logs.
+            {t('cust.subtitle', 'Client dossiers, visit histories by date point in time, student discounts, and allergy safety logs.')}
           </p>
         </div>
 
@@ -202,7 +197,7 @@ export const CustomersView: React.FC = () => {
           <Search className="w-4 h-4 text-[var(--text-dim)] absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="Search name, phone, student ID, barber..."
+            placeholder={t('cust.searchPlaceholder', 'Search name, phone, student ID, barber...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 text-xs py-2 rounded-xl bg-[var(--bg-card)] border border-[var(--border-subtle)] focus:border-[#D4AF37] shadow-xs"
@@ -225,10 +220,10 @@ export const CustomersView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Active Clients
+              {t('cust.activeClients', 'Active Clients')}
             </span>
             <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-2 py-0.5 font-bold">
-              {dateShortcut === 'all' ? 'Database' : 'In Period'}
+              {dateShortcut === 'all' ? t('cust.database', 'Database') : t('cust.inPeriod', 'In Period')}
             </span>
           </div>
           <div className="mt-3">
@@ -245,18 +240,18 @@ export const CustomersView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Visits Logged
+              {t('cust.visitsLogged', 'Visits Logged')}
             </span>
             <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-2 py-0.5 font-bold">
-              Services
+              {t('cust.services', 'Services')}
             </span>
           </div>
           <div className="mt-3">
             <span className="text-xl sm:text-2xl font-black text-[#D4AF37] font-mono block">
-              {totalVisitsInView} {totalVisitsInView === 1 ? 'Cut' : 'Cuts'}
+              {totalVisitsInView} {totalVisitsInView === 1 ? t('cust.cut', 'Cut') : t('cust.cuts', 'Cuts')}
             </span>
             <span className="text-[11px] text-[var(--text-dim)] block mt-0.5">
-              In selected date range
+              {t('cust.inSelectedRange', 'In selected date range')}
             </span>
           </div>
         </div>
@@ -265,7 +260,7 @@ export const CustomersView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Period Volume
+              {t('cust.periodVolume', 'Period Volume')}
             </span>
             <div className="p-1 rounded-md bg-emerald-500/10 text-emerald-500">
               <TrendingUp className="w-3.5 h-3.5" />
@@ -276,7 +271,7 @@ export const CustomersView: React.FC = () => {
               ₾{totalRevenueInView.toFixed(2)} GEL
             </span>
             <span className="text-[11px] text-emerald-500/80 font-semibold block mt-0.5">
-              Gross client spend
+              {t('cust.grossSpend', 'Gross client spend')}
             </span>
           </div>
         </div>
@@ -285,7 +280,7 @@ export const CustomersView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Student Clients
+              {t('cust.studentClients', 'Student Clients')}
             </span>
             <div className="p-1 rounded-md bg-amber-500/10 text-[#D4AF37]">
               <GraduationCap className="w-3.5 h-3.5" />
@@ -293,10 +288,10 @@ export const CustomersView: React.FC = () => {
           </div>
           <div className="mt-3">
             <span className="text-xl sm:text-2xl font-black text-[var(--text-main)] font-mono block">
-              {studentCountInView} Students
+              {studentCountInView} {t('cust.studentClients', 'Students')}
             </span>
             <span className="text-[11px] text-[var(--text-muted)] block mt-0.5">
-              20% discount eligible
+              {t('cust.discountEligible', '20% discount eligible')}
             </span>
           </div>
         </div>
@@ -312,7 +307,7 @@ export const CustomersView: React.FC = () => {
           {/* Shortcuts Row */}
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
             <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-dim)] mr-1 shrink-0 flex items-center gap-1">
-              <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" /> Date:
+              <Calendar className="w-3.5 h-3.5 text-[#D4AF37]" /> {t('cust.date', 'Date:')}
             </span>
 
             {/* 1. All Time */}
@@ -324,7 +319,7 @@ export const CustomersView: React.FC = () => {
                   : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
               }`}
             >
-              All Time
+              {t('cust.allTime', 'All Time')}
             </button>
 
             {/* 2. Today */}
@@ -336,7 +331,7 @@ export const CustomersView: React.FC = () => {
                   : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
               }`}
             >
-              <span>⚡ Today</span>
+              <span>{t('cust.today', '⚡ Today')}</span>
               <span className="text-[10px] opacity-75">(Sep 15)</span>
             </button>
 
@@ -349,7 +344,7 @@ export const CustomersView: React.FC = () => {
                   : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
               }`}
             >
-              <span>⏮️ Yesterday</span>
+              <span>{t('cust.yesterday', '⏮️ Yesterday')}</span>
               <span className="text-[10px] opacity-75">(Sep 14)</span>
             </button>
 
@@ -362,7 +357,7 @@ export const CustomersView: React.FC = () => {
                   : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
               }`}
             >
-              <span>📆 This Week</span>
+              <span>{t('cust.thisWeek', '📆 This Week')}</span>
             </button>
 
             {/* 5. This Month */}
@@ -374,7 +369,7 @@ export const CustomersView: React.FC = () => {
                   : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
               }`}
             >
-              <span>🗓️ This Month</span>
+              <span>{t('cust.thisMonth', '🗓️ This Month')}</span>
             </button>
 
             {/* 6. Custom Range Toggle */}
@@ -390,7 +385,7 @@ export const CustomersView: React.FC = () => {
               }`}
             >
               <CalendarRange className="w-3.5 h-3.5" />
-              <span>Custom Date Range</span>
+              <span>{t('cust.customRange', 'Custom Date Range')}</span>
             </button>
           </div>
 
@@ -401,7 +396,7 @@ export const CustomersView: React.FC = () => {
               className="px-2.5 py-1 text-xs text-[#D4AF37] hover:underline font-semibold flex items-center gap-1 self-end md:self-auto shrink-0"
             >
               <RotateCcw className="w-3 h-3" />
-              <span>Reset Date Filter</span>
+              <span>{t('cust.resetDateFilter', 'Reset Date Filter')}</span>
             </button>
           )}
 
@@ -411,7 +406,7 @@ export const CustomersView: React.FC = () => {
         {(dateShortcut === 'custom' || isDatePickerOpen) && (
           <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)] flex flex-wrap items-center gap-3 text-xs animate-fade-in">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-[var(--text-muted)]">From Date:</span>
+              <span className="font-bold text-[var(--text-muted)]">{t('cust.fromDate', 'From Date:')}</span>
               <input
                 type="date"
                 value={startDate}
@@ -424,7 +419,7 @@ export const CustomersView: React.FC = () => {
             </div>
 
             <div className="flex items-center gap-2">
-              <span className="font-bold text-[var(--text-muted)]">To Date:</span>
+              <span className="font-bold text-[var(--text-muted)]">{t('cust.toDate', 'To Date:')}</span>
               <input
                 type="date"
                 value={endDate}
@@ -438,7 +433,7 @@ export const CustomersView: React.FC = () => {
 
             {/* Quick Single Date Day Jumps */}
             <div className="flex items-center gap-1.5 ml-auto">
-              <span className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Jump To:</span>
+              <span className="text-[10px] uppercase font-bold text-[var(--text-dim)]">{t('cust.jumpTo', 'Jump To:')}</span>
               <button
                 onClick={() => {
                   setStartDate('2026-09-15');
@@ -478,7 +473,7 @@ export const CustomersView: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span>
-              Showing <strong className="text-[var(--text-main)] font-bold">{totalClientsInView}</strong> clients active during <strong className="text-[#D4AF37] font-semibold">{dateFilterLabel}</strong>
+              {t('cust.showing', 'Showing')} <strong className="text-[var(--text-main)] font-bold">{totalClientsInView}</strong> {t('cust.clientsActiveDuring', 'clients active during')} <strong className="text-[#D4AF37] font-semibold">{dateFilterLabel}</strong>
             </span>
           </div>
         </div>
@@ -495,7 +490,7 @@ export const CustomersView: React.FC = () => {
               : 'bg-[var(--bg-subtle)] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border-subtle)]'
           }`}
         >
-          All Categories ({totalClientsInView})
+          {t('cust.allCategories', 'All Categories')} ({totalClientsInView})
         </button>
 
         <button
@@ -507,7 +502,7 @@ export const CustomersView: React.FC = () => {
           }`}
         >
           <GraduationCap className="w-3.5 h-3.5 text-[#D4AF37]" />
-          <span>Student Discount (20% Off)</span>
+          <span>{t('cust.studentDiscountChip', 'Student Discount (20% Off)')}</span>
         </button>
 
         <button
@@ -519,7 +514,7 @@ export const CustomersView: React.FC = () => {
           }`}
         >
           <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Top Spenders (90+ GEL)</span>
+          <span>{t('cust.topSpendersChip', 'Top Spenders (90+ GEL)')}</span>
         </button>
 
         <button
@@ -531,7 +526,7 @@ export const CustomersView: React.FC = () => {
           }`}
         >
           <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
-          <span>Has Allergy Flag</span>
+          <span>{t('cust.allergyFlagChip', 'Has Allergy Flag')}</span>
         </button>
       </div>
 
@@ -541,27 +536,27 @@ export const CustomersView: React.FC = () => {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b border-[var(--border-subtle)] text-[var(--text-dim)] uppercase text-[10px] tracking-wider bg-[var(--bg-subtle)]/50">
-                <th className="py-3.5 px-4 font-bold">Client Name</th>
-                <th className="py-3.5 px-3 font-bold">Phone Number</th>
-                <th className="py-3.5 px-3 font-bold">Student Status</th>
-                <th className="py-3.5 px-3 font-bold">Preferred Barber</th>
+                <th className="py-3.5 px-4 font-bold">{t('cust.th.clientName', 'Client Name')}</th>
+                <th className="py-3.5 px-3 font-bold">{t('cust.th.phone', 'Phone Number')}</th>
+                <th className="py-3.5 px-3 font-bold">{t('cust.th.studentStatus', 'Student Status')}</th>
+                <th className="py-3.5 px-3 font-bold">{t('cust.th.preferredBarber', 'Preferred Barber')}</th>
                 <th className="py-3.5 px-3 font-bold text-center">
-                  {dateShortcut === 'all' ? 'Lifetime Visits' : 'Period Visits'}
+                  {dateShortcut === 'all' ? t('cust.th.lifetimeVisits', 'Lifetime Visits') : t('cust.th.periodVisits', 'Period Visits')}
                 </th>
                 <th className="py-3.5 px-3 font-bold">
-                  {dateShortcut === 'all' ? 'Lifetime Spend' : 'Period Spend'}
+                  {dateShortcut === 'all' ? t('cust.th.lifetimeSpend', 'Lifetime Spend') : t('cust.th.periodSpend', 'Period Spend')}
                 </th>
-                <th className="py-3.5 px-3 font-bold">Last Visit Date</th>
-                <th className="py-3.5 px-3 font-bold">Allergies</th>
-                <th className="py-3.5 px-4 font-bold text-right">Dossier</th>
+                <th className="py-3.5 px-3 font-bold">{t('cust.th.lastVisitDate', 'Last Visit Date')}</th>
+                <th className="py-3.5 px-3 font-bold">{t('cust.th.allergies', 'Allergies')}</th>
+                <th className="py-3.5 px-4 font-bold text-right">{t('cust.th.dossier', 'Dossier')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border-subtle)]">
               {filteredCustomersData.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-12 text-center text-xs text-[var(--text-dim)] space-y-2">
-                    <p className="font-semibold text-sm text-[var(--text-muted)]">No customers found for this time period / filter.</p>
-                    <p className="text-xs text-[var(--text-dim)]">Try selecting "All Time" or adjusting your search criteria.</p>
+                    <p className="font-semibold text-sm text-[var(--text-muted)]">{t('cust.noCustomersFound', 'No customers found for this time period / filter.')}</p>
+                    <p className="text-xs text-[var(--text-dim)]">{t('cust.tryAdjusting', 'Try selecting "All Time" or adjusting your search criteria.')}</p>
                     <button
                       onClick={() => {
                         handleShortcutSelect('all');
@@ -571,7 +566,7 @@ export const CustomersView: React.FC = () => {
                       className="btn-secondary text-xs py-1.5 px-3 font-bold mt-2 inline-flex items-center gap-1.5"
                     >
                       <RotateCcw className="w-3.5 h-3.5" />
-                      <span>Reset All Filters</span>
+                      <span>{t('cust.resetAllFilters', 'Reset All Filters')}</span>
                     </button>
                   </td>
                 </tr>
@@ -611,13 +606,13 @@ export const CustomersView: React.FC = () => {
                           <GraduationCap className="w-3 h-3" /> 20% Off
                         </span>
                       ) : (
-                        <span className="text-[11px] text-[var(--text-dim)]">Regular</span>
+                        <span className="text-[11px] text-[var(--text-dim)]">{t('cust.regular', 'Regular')}</span>
                       )}
                     </td>
 
                     {/* Preferred Barber */}
                     <td className="py-3.5 px-3 text-[var(--text-main)] font-medium">
-                      {c.preferredBarber || 'Any Barber'}
+                      {c.preferredBarber || t('cust.anyBarber', 'Any Barber')}
                     </td>
 
                     {/* Visits */}
@@ -625,7 +620,7 @@ export const CustomersView: React.FC = () => {
                       <span className="text-sm">{visitsInPeriod}</span>
                       {dateShortcut !== 'all' && (
                         <span className="text-[10px] text-[var(--text-dim)] block font-normal">
-                          of {c.totalVisits} total
+                          {t('cust.ofTotal', 'of')} {c.totalVisits}
                         </span>
                       )}
                     </td>
@@ -635,7 +630,7 @@ export const CustomersView: React.FC = () => {
                       <span className="text-sm">₾{spendInPeriod.toFixed(2)}</span>
                       {dateShortcut !== 'all' && (
                         <span className="text-[10px] text-[var(--text-dim)] block font-normal">
-                          (₾{c.totalSpent.toFixed(0)} LTV)
+                          (₾{c.totalSpent.toFixed(0)} {t('cust.ltv', 'LTV')})
                         </span>
                       )}
                     </td>
@@ -644,9 +639,9 @@ export const CustomersView: React.FC = () => {
                     <td className="py-3.5 px-3">
                       <span className="font-mono text-xs text-[var(--text-main)] font-semibold block">
                         {c.lastVisit === '2026-09-15' || c.lastVisit === 'Today' ? (
-                          <span className="text-emerald-500 font-bold">Today (15th)</span>
+                          <span className="text-emerald-500 font-bold">{t('cust.today', 'Today')} (15th)</span>
                         ) : c.lastVisit === '2026-09-14' || c.lastVisit === 'Yesterday' ? (
-                          <span className="text-amber-500 font-bold">Yesterday (14th)</span>
+                          <span className="text-amber-500 font-bold">{t('cust.yesterday', 'Yesterday')} (14th)</span>
                         ) : (
                           c.lastVisit
                         )}
@@ -660,7 +655,7 @@ export const CustomersView: React.FC = () => {
                           <ShieldAlert className="w-3 h-3" /> {c.allergies}
                         </span>
                       ) : (
-                        <span className="text-[10px] text-[var(--text-dim)]">None</span>
+                        <span className="text-[10px] text-[var(--text-dim)]">{t('cust.none', 'None')}</span>
                       )}
                     </td>
 
@@ -674,7 +669,7 @@ export const CustomersView: React.FC = () => {
                         }}
                         className="btn-secondary text-[11px] py-1.5 px-3 font-bold group-hover:border-[#D4AF37] group-hover:text-[#D4AF37] transition-all"
                       >
-                        <span>Dossier</span>
+                        <span>{t('cust.th.dossier', 'Dossier')}</span>
                         <ArrowRight className="w-3 h-3 inline ml-1" />
                       </button>
                     </td>
@@ -704,7 +699,7 @@ export const CustomersView: React.FC = () => {
                     </h3>
                     {activeModalCustomer.isStudent && (
                       <span className="badge-status badge-gold text-[10px] flex items-center gap-1">
-                        <GraduationCap className="w-3 h-3" /> Student (20% Off)
+                        <GraduationCap className="w-3 h-3" /> {t('student.discount', 'Student 20% Discount')}
                       </span>
                     )}
                   </div>
@@ -730,14 +725,14 @@ export const CustomersView: React.FC = () => {
               <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-1">
                 <div className="text-[10px] uppercase font-bold text-[var(--text-dim)] flex items-center gap-1">
                   <GraduationCap className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  Student Verification
+                  {t('cust.studentVerification', 'Student Verification')}
                 </div>
                 <div className="font-extrabold text-[var(--text-main)] text-sm">
-                  {activeModalCustomer.isStudent ? 'Active (20% Discount)' : 'Regular Client'}
+                  {activeModalCustomer.isStudent ? t('cust.activeDiscount', 'Active (20% Discount)') : t('cust.regularClient', 'Regular Client')}
                 </div>
                 {activeModalCustomer.studentIdProof && (
                   <div className="text-[11px] text-[var(--text-muted)]">
-                    Proof ID: <span className="font-mono font-semibold text-[var(--text-main)]">{activeModalCustomer.studentIdProof}</span>
+                    {t('cust.proofId', 'Proof ID:')} <span className="font-mono font-semibold text-[var(--text-main)]">{activeModalCustomer.studentIdProof}</span>
                   </div>
                 )}
               </div>
@@ -746,13 +741,13 @@ export const CustomersView: React.FC = () => {
               <div className="p-3.5 rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-subtle)] space-y-1">
                 <div className="text-[10px] uppercase font-bold text-[var(--text-dim)] flex items-center gap-1">
                   <ShieldAlert className="w-3.5 h-3.5 text-rose-500" />
-                  Allergies & Sensitivities
+                  {t('cust.allergiesSensitivities', 'Allergies & Sensitivities')}
                 </div>
                 <div className={`font-bold text-sm ${activeModalCustomer.allergies !== 'None' ? 'text-rose-500 dark:text-rose-400' : 'text-[var(--text-main)]'}`}>
-                  {activeModalCustomer.allergies || 'None'}
+                  {activeModalCustomer.allergies || t('cust.none', 'None')}
                 </div>
                 <div className="text-[10px] text-[var(--text-dim)]">
-                  Check skin sensitivity before alcohol aftershave
+                  {t('cust.checkSensitivity', 'Check skin sensitivity before alcohol aftershave')}
                 </div>
               </div>
 
@@ -761,15 +756,15 @@ export const CustomersView: React.FC = () => {
             {/* Lifetime Performance Numbers */}
             <div className="grid grid-cols-3 gap-2 text-center">
               <div className="p-2.5 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Total Spend</span>
+                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('cust.totalSpent', 'Total Spent')}</span>
                 <span className="text-base font-black text-[#D4AF37] font-mono">₾{activeModalCustomer.totalSpent.toFixed(2)}</span>
               </div>
               <div className="p-2.5 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Completed Visits</span>
+                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('cust.totalVisits', 'Total Visits')}</span>
                 <span className="text-base font-black text-[var(--text-main)] font-mono">{activeModalCustomer.totalVisits}</span>
               </div>
               <div className="p-2.5 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Preferred Barber</span>
+                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('cust.preferredBarber', 'Preferred Barber')}</span>
                 <span className="text-xs font-bold text-[var(--text-main)] truncate block">{activeModalCustomer.preferredBarber || 'N/A'}</span>
               </div>
             </div>
@@ -779,18 +774,18 @@ export const CustomersView: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
                   <History className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  Completed Service Ledger ({activeModalCustomer.history.length})
+                  {t('cust.completedLedger', 'Completed Service Ledger')} ({activeModalCustomer.history.length})
                 </h4>
                 {dateShortcut !== 'all' && (
                   <span className="text-[10px] text-[#D4AF37] font-semibold">
-                    Filter: {dateFilterLabel}
+                    {t('cust.filter', 'Filter:')} {dateFilterLabel}
                   </span>
                 )}
               </div>
 
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {activeModalCustomer.history.length === 0 ? (
-                  <div className="text-xs text-[var(--text-dim)] py-3 text-center">No visits logged yet.</div>
+                  <div className="text-xs text-[var(--text-dim)] py-3 text-center">{t('cust.noVisitsLogged', 'No visits logged yet.')}</div>
                 ) : (
                   activeModalCustomer.history.map((h, i) => {
                     const isMatchedInFilter = isDateInFilter(h.date);
@@ -808,7 +803,7 @@ export const CustomersView: React.FC = () => {
                             <span className="font-bold text-[var(--text-main)]">{h.serviceName}</span>
                             {isMatchedInFilter && dateShortcut !== 'all' && (
                               <span className="text-[9px] font-bold px-2 py-0.5 rounded-md bg-[#D4AF37] text-black">
-                                In Filter
+                                {t('cust.inFilter', 'In Filter')}
                               </span>
                             )}
                           </div>
@@ -840,7 +835,7 @@ export const CustomersView: React.FC = () => {
                 onClick={() => setActiveModalCustomer(null)}
                 className="btn-secondary text-xs py-2 px-5 font-bold"
               >
-                Close Dossier
+                {t('cust.closeDossier', 'Close Dossier')}
               </button>
             </div>
 

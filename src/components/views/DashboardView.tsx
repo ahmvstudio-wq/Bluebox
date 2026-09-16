@@ -1,24 +1,18 @@
 import React, { useState } from 'react';
 import { useCash, BarberStats } from '../../context/CashContext';
+import { DEFAULT_COMMISSION_RATE } from '../../constants';
 import { 
   TrendingUp, 
   Users, 
   CalendarCheck, 
   Scissors, 
-  Footprints, 
-  DollarSign, 
   ArrowUpRight,
   ChevronDown,
   ChevronUp,
   Clock,
   UserCheck,
   X,
-  Lock,
-  Sparkles,
-  Banknote,
-  CreditCard,
-  ShieldCheck,
-  ExternalLink
+  Lock
 } from 'lucide-react';
 
 export const DashboardView: React.FC = () => {
@@ -31,7 +25,8 @@ export const DashboardView: React.FC = () => {
     branchBookings,
     branches,
     currentBranch,
-    loginAsBarber
+    loginAsBarber,
+    t
   } = useCash();
 
   // State for expanded barber inline or sheet modal
@@ -59,10 +54,10 @@ export const DashboardView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Today's Revenue
+              {t('dash.todayRevenue', "Today's Revenue")}
             </span>
             <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-1.5 py-0.5">
-              <TrendingUp className="w-3 h-3" /> Live
+              <TrendingUp className="w-3 h-3" /> {t('status.live', 'Live')}
             </span>
           </div>
           <div className="mt-3 flex items-baseline gap-1.5">
@@ -72,7 +67,7 @@ export const DashboardView: React.FC = () => {
             <span className="text-xs font-bold text-[#D4AF37]">GEL</span>
           </div>
           <div className="mt-2 text-[11px] text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-2 truncate">
-            Gross booking volume today
+            {t('dash.grossVolume', 'Gross booking volume today')}
           </div>
         </div>
 
@@ -80,20 +75,20 @@ export const DashboardView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Today's Clients
+              {t('dash.todayClients', "Today's Clients")}
             </span>
             <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-1.5 py-0.5">
-              <Users className="w-3 h-3" /> Served
+              <Users className="w-3 h-3" /> {t('status.served', 'Served')}
             </span>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-[var(--text-main)] font-mono">
               {todayCustomers}
             </span>
-            <span className="text-xs text-[var(--text-dim)]">completed visits</span>
+            <span className="text-xs text-[var(--text-dim)]">{t('dash.completedVisits', 'completed visits')}</span>
           </div>
           <div className="mt-2 text-[11px] text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-2 truncate">
-            Across {activeBranchData.name} chairs
+            {t('dash.acrossChairs', 'Across')} {activeBranchData.name} {t('branch.chairs', 'chairs')}
           </div>
         </div>
 
@@ -101,20 +96,20 @@ export const DashboardView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Scheduled Queue
+              {t('dash.scheduledQueue', 'Scheduled Queue')}
             </span>
             <span className="badge-status badge-neutral text-[9px] sm:text-[10px] px-1.5 py-0.5">
-              <CalendarCheck className="w-3 h-3" /> Pipeline
+              <CalendarCheck className="w-3 h-3" /> {t('dash.pipeline', 'Pipeline')}
             </span>
           </div>
           <div className="mt-3 flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-[var(--text-main)] font-mono">
               {todayBookingsCount}
             </span>
-            <span className="text-xs text-[var(--text-dim)]">appointments</span>
+            <span className="text-xs text-[var(--text-dim)]">{t('dash.appointments', 'appointments')}</span>
           </div>
           <div className="mt-2 text-[11px] text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-2 truncate">
-            Reserved chair slots
+            {t('dash.reservedSlots', 'Reserved chair slots')}
           </div>
         </div>
 
@@ -122,10 +117,10 @@ export const DashboardView: React.FC = () => {
         <div className="card-executive p-4 sm:p-5 flex flex-col justify-between">
           <div className="flex items-center justify-between">
             <span className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">
-              Traffic Mix
+              {t('dash.trafficMix', 'Traffic Mix')}
             </span>
             <span className="badge-status badge-gold text-[9px] sm:text-[10px] px-1.5 py-0.5">
-              Ratio
+              {t('dash.ratio', 'Ratio')}
             </span>
           </div>
           <div className="mt-3 flex items-center justify-between">
@@ -133,18 +128,18 @@ export const DashboardView: React.FC = () => {
               <span className="text-xl sm:text-2xl font-black text-amber-500 dark:text-amber-400 font-mono">
                 {todayWalkInsCount}
               </span>
-              <span className="text-[10px] text-[var(--text-dim)] block">Walk-ins</span>
+              <span className="text-[10px] text-[var(--text-dim)] block">{t('dash.walkins', 'Walk-ins')}</span>
             </div>
             <div className="h-6 w-px bg-[var(--border-subtle)]"></div>
             <div>
               <span className="text-xl sm:text-2xl font-black text-[var(--text-main)] font-mono">
                 {todayBookingsCount}
               </span>
-              <span className="text-[10px] text-[var(--text-dim)] block">Booked</span>
+              <span className="text-[10px] text-[var(--text-dim)] block">{t('dash.booked', 'Booked')}</span>
             </div>
           </div>
           <div className="mt-2 text-[11px] text-[var(--text-dim)] border-t border-[var(--border-subtle)] pt-2 truncate">
-            Total flow: {todayWalkInsCount + todayBookingsCount} clients
+            {t('dash.totalFlow', 'Total flow')}: {todayWalkInsCount + todayBookingsCount}
           </div>
         </div>
 
@@ -159,14 +154,14 @@ export const DashboardView: React.FC = () => {
             <div>
               <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
                 <Users className="w-4 h-4 text-[#D4AF37]" />
-                Clients Served by Barber
+                {t('dash.clientsServedByBarber', 'Clients Served by Barber')}
               </h3>
               <p className="text-[11px] text-[var(--text-dim)] mt-0.5">
-                Click any barber to open their station sheet & visit history
+                {t('dash.clickDossier', 'Click any barber to open their station sheet & visit history')}
               </p>
             </div>
             <span className="badge-status badge-neutral text-xs font-mono font-bold">
-              {todayCustomers} Total
+              {todayCustomers} {t('dash.total', 'Total')}
             </span>
           </div>
 
@@ -195,7 +190,7 @@ export const DashboardView: React.FC = () => {
                         <div className="font-bold text-sm text-[var(--text-main)] group-hover:text-[#D4AF37] transition-colors truncate flex items-center gap-1.5">
                           <span>{stat.barber.name}</span>
                           <span className="text-[9px] px-1.5 py-0.5 rounded bg-[var(--bg-card)] border border-[var(--border-subtle)] text-[var(--text-dim)] hidden sm:inline">
-                            50% Cut
+                            {Math.round(stat.barber.commissionRate * 100)}% Cut
                           </span>
                         </div>
                         <div className="text-[11px] text-[var(--text-muted)] truncate">
@@ -210,7 +205,7 @@ export const DashboardView: React.FC = () => {
                           {stat.clientsServedToday}
                         </span>
                         <span className="text-[10px] text-[var(--text-dim)] block">
-                          {stat.clientsServedToday === 1 ? 'client today' : 'clients today'}
+                          {stat.clientsServedToday === 1 ? t('dash.clientToday', 'client today') : t('dash.clientsToday', 'clients today')}
                         </span>
                       </div>
 
@@ -219,7 +214,7 @@ export const DashboardView: React.FC = () => {
                         type="button"
                         onClick={(e) => toggleInlineExpand(e, stat.barber.id)}
                         className="p-1 rounded-lg text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors"
-                        title={isExpanded ? 'Collapse' : 'Expand quick summary'}
+                        title={isExpanded ? t('action.collapse', 'Collapse') : t('action.expand', 'Expand')}
                       >
                         {isExpanded ? (
                           <ChevronUp className="w-4 h-4 text-[#D4AF37]" />
@@ -235,19 +230,19 @@ export const DashboardView: React.FC = () => {
                     <div className="p-3 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] space-y-2 text-xs animate-fade-in">
                       <div className="grid grid-cols-3 gap-2 text-center">
                         <div className="p-2 rounded-lg bg-[var(--bg-subtle)]">
-                          <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Revenue</span>
+                          <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('dash.revenue', 'Revenue')}</span>
                           <span className="font-mono font-black text-sm text-[var(--text-main)]">
-                            ₾{stat.revenueGenerated.toFixed(0)}
+                            ₾{stat.revenueGenerated.toFixed(2)}
                           </span>
                         </div>
                         <div className="p-2 rounded-lg bg-[var(--bg-subtle)]">
-                          <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">50% Cut</span>
+                          <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('dash.cut50', `${Math.round(stat.barber.commissionRate * 100)}% Cut`)}</span>
                           <span className="font-mono font-black text-sm text-[#D4AF37]">
-                            ₾{stat.barberEarnings.toFixed(0)}
+                            ₾{stat.barberEarnings.toFixed(2)}
                           </span>
                         </div>
                         <div className="p-2 rounded-lg bg-[var(--bg-subtle)]">
-                          <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Cuts Done</span>
+                          <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('dash.cutsDone', 'Cuts Done')}</span>
                           <span className="font-mono font-black text-sm text-emerald-500">
                             {stat.servicesCompleted}
                           </span>
@@ -256,13 +251,13 @@ export const DashboardView: React.FC = () => {
 
                       <div className="flex items-center justify-between pt-1">
                         <span className="text-[11px] text-[var(--text-dim)]">
-                          {barberBookings.length} total visits logged today
+                          {barberBookings.length} {t('dash.totalVisitsLoggedToday', 'total visits logged today')}
                         </span>
                         <button
                           onClick={() => handleBarberClick(stat)}
                           className="text-xs font-bold text-[#D4AF37] hover:underline flex items-center gap-1"
                         >
-                          <span>Open Full Station Sheet</span>
+                          <span>{t('action.openSheet', 'Open Full Station Sheet')}</span>
                           <ArrowUpRight className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -281,10 +276,10 @@ export const DashboardView: React.FC = () => {
             <div>
               <h3 className="text-sm font-bold text-[var(--text-main)] flex items-center gap-2">
                 <Scissors className="w-4 h-4 text-[#D4AF37]" />
-                Revenue Generated by Barber
+                {t('dash.revenueByBarber', 'Revenue Generated by Barber')}
               </h3>
               <p className="text-[11px] text-[var(--text-dim)] mt-0.5">
-                Live chair sales with 50% commission allocation
+                {t('dash.liveChairSales', `Live chair sales with ${Math.round(DEFAULT_COMMISSION_RATE * 100)}% commission allocation`)}
               </p>
             </div>
             <span className="text-xs font-mono font-bold text-[#D4AF37]">
@@ -295,7 +290,6 @@ export const DashboardView: React.FC = () => {
           <div className="space-y-2">
             {barberPerformanceList.map((stat) => {
               const isExpanded = expandedBarberId === stat.barber.id;
-              const barberBookings = branchBookings.filter((b) => b.barberId === stat.barber.id);
 
               return (
                 <div
@@ -318,7 +312,7 @@ export const DashboardView: React.FC = () => {
                           {stat.barber.name}
                         </div>
                         <div className="text-[11px] text-[var(--text-dim)]">
-                          Commission: <span className="font-mono font-bold text-[#D4AF37]">₾{stat.barberEarnings.toFixed(2)} GEL</span>
+                          {t('dash.commission', 'Commission')}: <span className="font-mono font-bold text-[#D4AF37]">₾{stat.barberEarnings.toFixed(2)} GEL</span>
                         </div>
                       </div>
                     </div>
@@ -329,7 +323,7 @@ export const DashboardView: React.FC = () => {
                           ₾{stat.revenueGenerated.toFixed(2)}
                         </span>
                         <span className="text-[10px] text-[var(--text-dim)] block">
-                          service sales
+                          {t('dash.serviceSales', 'service sales')}
                         </span>
                       </div>
 
@@ -338,7 +332,7 @@ export const DashboardView: React.FC = () => {
                         type="button"
                         onClick={(e) => toggleInlineExpand(e, stat.barber.id)}
                         className="p-1 rounded-lg text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-card)] transition-colors"
-                        title={isExpanded ? 'Collapse' : 'Expand quick summary'}
+                        title={isExpanded ? t('action.collapse', 'Collapse') : t('action.expand', 'Expand')}
                       >
                         {isExpanded ? (
                           <ChevronUp className="w-4 h-4 text-[#D4AF37]" />
@@ -353,15 +347,15 @@ export const DashboardView: React.FC = () => {
                   {isExpanded && (
                     <div className="p-3 bg-[var(--bg-card)] border-t border-[var(--border-subtle)] space-y-2 text-xs animate-fade-in">
                       <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)]">
-                        <span>Month Base: <strong className="text-[var(--text-main)]">₾{stat.monthEarnings.toFixed(2)} GEL</strong></span>
-                        <span>Working Shift: <strong className="text-[var(--text-main)]">{stat.barber.workingHours}h</strong></span>
+                        <span>{t('dash.monthBase', 'Month Base')}: <strong className="text-[var(--text-main)]">₾{stat.monthEarnings.toFixed(2)} GEL</strong></span>
+                        <span>{t('dash.workingShift', 'Working Shift')}: <strong className="text-[var(--text-main)]">{stat.barber.workingHours}h</strong></span>
                       </div>
                       
                       <button
                         onClick={() => handleBarberClick(stat)}
                         className="w-full py-1.5 px-3 rounded-lg bg-[var(--bg-subtle)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[#D4AF37] font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
                       >
-                        <span>Open Station Dossier Sheet</span>
+                        <span>{t('dash.openStationDossier', 'Open Station Dossier Sheet')}</span>
                         <ArrowUpRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -394,7 +388,7 @@ export const DashboardView: React.FC = () => {
                       {activeSheetBarber.barber.name}
                     </h3>
                     <span className="badge-status badge-gold text-[10px]">
-                      50% Commission
+                      {t('barber.commission50Badge', `${Math.round(activeSheetBarber.barber.commissionRate * 100)}% Commission`)}
                     </span>
                   </div>
                   <p className="text-xs text-[var(--text-muted)] mt-0.5">
@@ -403,10 +397,10 @@ export const DashboardView: React.FC = () => {
                   <div className="flex items-center gap-2 text-[10px] text-[var(--text-dim)] font-mono mt-1">
                     <span>{activeBranchData.name}</span>
                     <span>•</span>
-                    <span>{activeSheetBarber.barber.workingHours}h Shift</span>
+                    <span>{activeSheetBarber.barber.workingHours}h {t('dash.shift', 'Shift')}</span>
                     <span>•</span>
                     <span className="flex items-center gap-0.5 text-[#D4AF37]">
-                      <Lock className="w-2.5 h-2.5" /> PIN: {activeSheetBarber.barber.pin || '1234'}
+                      <Lock className="w-2.5 h-2.5" /> {t('dash.pin', 'PIN')}: {activeSheetBarber.barber.pin || '1234'}
                     </span>
                   </div>
                 </div>
@@ -423,35 +417,35 @@ export const DashboardView: React.FC = () => {
             {/* Performance Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
               <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Today Sales</span>
+                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('dash.todaySales', 'Today Sales')}</span>
                 <span className="text-base font-black text-[var(--text-main)] font-mono">
-                  ₾{activeSheetBarber.revenueGenerated.toFixed(0)}
+                  ₾{activeSheetBarber.revenueGenerated.toFixed(2)}
                 </span>
-                <span className="text-[9px] text-[var(--text-dim)] block">GEL Gross</span>
+                <span className="text-[9px] text-[var(--text-dim)] block">{t('dash.gelGross', 'GEL Gross')}</span>
               </div>
 
               <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">50% Payout</span>
+                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('dash.payout50', `${Math.round(activeSheetBarber.barber.commissionRate * 100)}% Payout`)}</span>
                 <span className="text-base font-black text-[#D4AF37] font-mono">
-                  ₾{activeSheetBarber.barberEarnings.toFixed(0)}
+                  ₾{activeSheetBarber.barberEarnings.toFixed(2)}
                 </span>
-                <span className="text-[9px] text-[var(--text-dim)] block">Earned Today</span>
+                <span className="text-[9px] text-[var(--text-dim)] block">{t('dash.earnedToday', 'Earned Today')}</span>
               </div>
 
               <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Clients Served</span>
+                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('dash.clientsServed', 'Clients Served')}</span>
                 <span className="text-base font-black text-emerald-500 font-mono">
                   {activeSheetBarber.clientsServedToday}
                 </span>
-                <span className="text-[9px] text-[var(--text-dim)] block">{activeSheetBarber.servicesCompleted} cuts</span>
+                <span className="text-[9px] text-[var(--text-dim)] block">{activeSheetBarber.servicesCompleted} {t('dash.cuts', 'cuts')}</span>
               </div>
 
               <div className="p-3 bg-[var(--bg-subtle)] rounded-xl border border-[var(--border-subtle)]">
-                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">Month Total</span>
+                <span className="text-[9px] uppercase font-bold text-[var(--text-dim)] block">{t('dash.monthTotal', 'Month Total')}</span>
                 <span className="text-base font-black text-emerald-500 font-mono">
-                  ₾{activeSheetBarber.monthEarnings.toFixed(0)}
+                  ₾{activeSheetBarber.monthEarnings.toFixed(2)}
                 </span>
-                <span className="text-[9px] text-[var(--text-dim)] block">MTD Accrued</span>
+                <span className="text-[9px] text-[var(--text-dim)] block">{t('dash.mtdAccrued', 'MTD Accrued')}</span>
               </div>
             </div>
 
@@ -460,17 +454,17 @@ export const DashboardView: React.FC = () => {
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  Today's Chair Activity (
+                  {t('dash.todayChairActivity', "Today's Chair Activity")} (
                   {branchBookings.filter((b) => b.barberId === activeSheetBarber.barber.id).length}
                   )
                 </h4>
-                <span className="text-[10px] text-emerald-500 font-bold">Live Status</span>
+                <span className="text-[10px] text-emerald-500 font-bold">{t('dash.liveStatus', 'Live Status')}</span>
               </div>
 
               <div className="space-y-1.5 max-h-48 overflow-y-auto">
                 {branchBookings.filter((b) => b.barberId === activeSheetBarber.barber.id).length === 0 ? (
                   <div className="text-xs text-[var(--text-dim)] py-4 text-center">
-                    No bookings logged for this station today yet.
+                    {t('dash.noBookingsLogged', 'No bookings logged for this station today yet.')}
                   </div>
                 ) : (
                   branchBookings
@@ -524,7 +518,7 @@ export const DashboardView: React.FC = () => {
                 className="btn-primary-gold text-xs py-2 px-4 font-bold flex items-center gap-1.5 shadow-sm active:scale-95"
               >
                 <UserCheck className="w-4 h-4" />
-                <span>Switch to Barber View</span>
+                <span>{t('auth.switchToBarber', 'Switch to Barber View')}</span>
               </button>
 
               <button
@@ -532,7 +526,7 @@ export const DashboardView: React.FC = () => {
                 onClick={() => setActiveSheetBarber(null)}
                 className="btn-secondary text-xs py-2 px-4 font-bold"
               >
-                Close Sheet
+                {t('dash.closeSheet', 'Close Sheet')}
               </button>
             </div>
 

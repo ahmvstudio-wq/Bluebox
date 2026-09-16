@@ -6,15 +6,14 @@ import { LoginView } from './components/views/LoginView';
 import { BarberDashboardView } from './components/views/BarberDashboardView';
 import { DashboardView } from './components/views/DashboardView';
 import { BarbersView } from './components/views/BarbersView';
-import { CustomersView } from './components/views/CustomersView';
 import { BookingView } from './components/views/BookingView';
-import { WalkInView } from './components/views/WalkInView';
+import { ExpensesView } from './components/views/ExpensesView';
 import { FinanceView } from './components/views/FinanceView';
 import { BranchesView } from './components/views/BranchesView';
-import { Sun, Moon } from 'lucide-react';
+import { Sun, Moon, Languages } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const { currentUser, theme, toggleTheme } = useCash();
+  const { currentUser, theme, toggleTheme, language, toggleLanguage, t } = useCash();
   const [adminTab, setAdminTab] = useState<DemoTab>('dashboard');
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
 
@@ -33,32 +32,43 @@ export const App: React.FC = () => {
             <img
               src="/logo.jpg"
               alt="Blackbox Barber"
-              className="w-8 h-8 rounded-full border border-[#D4AF37] object-cover"
+              className="w-8 h-8 rounded-full border border-[#D4AF37] object-cover shadow-xs"
             />
             <div>
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-xs sm:text-sm tracking-wide text-[var(--text-main)]">Blackbox</span>
-                <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">BARBER</span>
+                <span className="font-extrabold text-xs sm:text-sm tracking-wide text-[var(--text-main)]">{t('brand.name', 'Blackbox')}</span>
+                <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-[#18181B] dark:bg-[#27272A] text-[#D4AF37] border border-[#D4AF37]/40">{t('brand.sub', 'BARBER')}</span>
               </div>
-              <span className="text-[10px] text-[var(--text-muted)] block sm:inline">Chair POS • {currentUser.name}</span>
+              <span className="text-[10px] text-[var(--text-muted)] block sm:inline">{t('brand.chairPos', 'Chair POS')} • {currentUser.name}</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Bilingual Language Switcher */}
+            <button
+              onClick={toggleLanguage}
+              className="px-2.5 py-1.5 sm:py-2 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-main)] transition-all flex items-center gap-1.5 text-xs font-bold active:scale-95 shadow-xs"
+              title={language === 'en' ? 'التبديل إلى اللغة العربية' : 'Switch to English'}
+            >
+              <Languages className="w-3.5 h-3.5 text-[#D4AF37]" />
+              <span>{language === 'en' ? 'العربية' : 'English'}</span>
+            </button>
+
+            {/* Theme Switcher */}
             <button
               onClick={toggleTheme}
-              className="p-1.5 sm:p-2 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-main)] transition-all flex items-center gap-1.5 text-xs font-semibold"
+              className="p-1.5 sm:p-2 rounded-xl bg-[var(--bg-subtle)] hover:bg-[var(--bg-card-hover)] border border-[var(--border-subtle)] text-[var(--text-main)] transition-all flex items-center gap-1.5 text-xs font-semibold active:scale-95"
               title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
             >
               {theme === 'dark' ? (
                 <>
                   <Sun className="w-4 h-4 text-[#D4AF37]" />
-                  <span className="text-xs hidden sm:inline">Light</span>
+                  <span className="text-xs hidden sm:inline">{t('theme.light', 'Light')}</span>
                 </>
               ) : (
                 <>
                   <Moon className="w-4 h-4 text-[#71717A]" />
-                  <span className="text-xs hidden sm:inline">Dark</span>
+                  <span className="text-xs hidden sm:inline">{t('theme.dark', 'Dark')}</span>
                 </>
               )}
             </button>
@@ -72,15 +82,15 @@ export const App: React.FC = () => {
 
         <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)] py-3 px-4 sm:px-6 text-center text-xs text-[var(--text-dim)] shrink-0">
           <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-1">
-            <span className="text-[11px]">Blackbox Barber • Personal Chair Management</span>
-            <span className="text-[11px] text-emerald-500 dark:text-emerald-400 font-semibold">Strict Data Isolation Active</span>
+            <span className="text-[11px]">{t('brand.name', 'Blackbox')} {t('brand.sub', 'Barber')} • {t('brand.personalChair', 'Personal Chair Management')}</span>
+            <span className="text-[11px] text-emerald-500 dark:text-emerald-400 font-semibold">{t('brand.dataIsolation', 'Strict Data Isolation Active')}</span>
           </div>
         </footer>
       </div>
     );
   }
 
-  // 3. Admin / Owner Role -> Full 7-Feature Management Suite
+  // 3. Admin / Owner Role -> Full 8-Feature Management Suite
   return (
     <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-main)] flex font-sans antialiased transition-colors">
       
@@ -106,9 +116,8 @@ export const App: React.FC = () => {
           <div key={adminTab} className="animate-page-enter">
             {adminTab === 'dashboard' && <DashboardView />}
             {adminTab === 'barbers' && <BarbersView />}
-            {adminTab === 'customers' && <CustomersView />}
             {adminTab === 'booking' && <BookingView />}
-            {adminTab === 'walkin' && <WalkInView />}
+            {adminTab === 'expenses' && <ExpensesView />}
             {adminTab === 'finance' && <FinanceView />}
             {adminTab === 'branches' && <BranchesView />}
           </div>
@@ -118,11 +127,11 @@ export const App: React.FC = () => {
         <footer className="border-t border-[var(--border-subtle)] bg-[var(--bg-sidebar)] py-3.5 px-4 sm:px-6 text-center text-xs text-[var(--text-dim)] shrink-0 hidden sm:block">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
             <div className="flex items-center gap-2">
-              <span className="font-extrabold text-[var(--text-main)] font-['Cinzel',serif]">BLACKBOX BARBER</span>
-              <span>• Full Management & Operations Suite</span>
+              <span className="font-extrabold text-[var(--text-main)] font-['Cinzel',serif]">{t('brand.name', 'BLACKBOX')} {t('brand.sub', 'BARBER')}</span>
+              <span>• {t('brand.fullSuite', 'Full Management & Operations Suite')}</span>
             </div>
             <p className="text-[11px] text-[var(--text-dim)]">
-              Multi-Branch Matrix • Owner Master Control
+              {t('brand.multiBranch', 'Multi-Branch Matrix • Owner Master Control')}
             </p>
           </div>
         </footer>
